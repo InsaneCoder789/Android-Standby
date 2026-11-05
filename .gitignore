@@ -1,0 +1,15 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+# Local device captures, generated design images and signing material
+previews/
+docs/design/**/images/
+docs/design/**/manifest.json
+keystore.properties
+*.jks
+*.keystore
+.env
+.env.*
