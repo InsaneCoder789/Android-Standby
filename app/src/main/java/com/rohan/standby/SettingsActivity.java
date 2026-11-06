@@ -39,7 +39,7 @@ public class SettingsActivity extends Activity {
     private static final int[] FLOAT_SWATCH = {0xfff06cb4, 0xff6fdc8c, 0xff5ac8fa, 0xffffb347};
     private static final int REQ_PHOTOS = 12, REQ_LOCATION = 13, REQ_NOTIFY = 15;
 
-    private int[] draftFrames;
+    private int[] draftFrames; private int[] draftLooks = new int[Frames.COUNT];
     private final ArrayDeque<String> stack = new ArrayDeque<>();
     private ScrollView scroll; private LinearLayout column; private StandbyView preview;
     private final List<Runnable> refreshers = new ArrayList<>();
@@ -54,10 +54,11 @@ public class SettingsActivity extends Activity {
         getWindow().setStatusBarColor(Color.BLACK); getWindow().setNavigationBarColor(Color.BLACK);
         scroll = new ScrollView(this); scroll.setBackgroundColor(Color.BLACK); scroll.setFillViewport(true); setContentView(scroll);
         draftFrames = state != null && state.getIntArray("draftFrames") != null ? state.getIntArray("draftFrames") : Prefs.frames(this);
+        for(int f=0;f<Frames.COUNT;f++)draftLooks[f]=Prefs.component(this,f); if(state!=null && state.getIntArray("draftLooks")!=null)draftLooks=state.getIntArray("draftLooks");
         String start = getIntent().getStringExtra("page"); go(start == null ? "home" : start);
 
     }
-    @Override protected void onSaveInstanceState(Bundle state){super.onSaveInstanceState(state);state.putIntArray("draftFrames",draftFrames);}
+    @Override protected void onSaveInstanceState(Bundle state){super.onSaveInstanceState(state);state.putIntArray("draftFrames",draftFrames);state.putIntArray("draftLooks",draftLooks);}
     @Override protected void onResume() { super.onResume(); Instant.sync(this); for (Runnable r : refreshers) r.run(); if (preview != null) preview.reload(); if (stack.peek() != null && stack.peek().equals("tilt")) startTilt(); }
     @Override protected void onPause() { stopTilt(); super.onPause(); }
     @Override public void onBackPressed() { if (stack.size() > 1) { stack.pop(); render(stack.peek()); } else super.onBackPressed(); }
@@ -129,8 +130,8 @@ public class SettingsActivity extends Activity {
         TextView v=label(title,16,Fonts.UI_SEMI,Color.WHITE);v.setGravity(Gravity.CENTER);v.setMinHeight(dp(48));v.setPadding(dp(14),dp(12),dp(14),dp(12));v.setBackground(card());v.setOnClickListener(click);v.setFocusable(true);v.setContentDescription(title);return v;
     }
     private void selectionActions(){
-        TextView apply=action("Apply "+draftFrames.length+" frames to Standby",v->{Prefs.saveFrames(this,draftFrames);changed();Toast.makeText(this,"Selection applied to Standby",Toast.LENGTH_SHORT).show();rebuild();});add(apply);
-        TextView cancel=action("Reset selection to current Standby",v->{draftFrames=Prefs.frames(this);rebuild();});add(cancel);
+        TextView apply=action("Apply "+draftFrames.length+" frames to Standby",v->{Prefs.saveFrames(this,draftFrames);android.content.SharedPreferences.Editor editor=Prefs.sp(this).edit();for(int f:draftFrames)editor.putInt("comp"+f,draftLooks[f]);editor.apply();changed();Toast.makeText(this,"Selection applied to Standby",Toast.LENGTH_SHORT).show();rebuild();});add(apply);
+        TextView cancel=action("Reset selection to current Standby",v->{draftFrames=Prefs.frames(this);for(int f=0;f<Frames.COUNT;f++)draftLooks[f]=Prefs.component(this,f);rebuild();});add(cancel);
     }
     /** Actual renderer preview, isolated from input so browsing never operates music or changes a live frame. */
     private final class FrameThumbnail extends View {
@@ -142,7 +143,7 @@ public class SettingsActivity extends Activity {
     }
     private void frameRow(final int frame, final int pos, final int total){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(12),dp(12),dp(12),dp(12));box.setBackground(card());
-        FrameThumbnail image=new FrameThumbnail(frame,Prefs.component(this,frame));box.addView(image,new LinearLayout.LayoutParams(-1,Math.round((contentWidth()-dp(64))/2.2f)));
+        FrameThumbnail image=new FrameThumbnail(frame,draftLooks[frame]);box.addView(image,new LinearLayout.LayoutParams(-1,Math.round((contentWidth()-dp(64))/2.2f)));
         TextView title=label(Frames.NAMES[frame]+(pos>=0?"  ·  Selected "+(pos+1):""),20,Fonts.UI_SEMI,Color.WHITE);title.setPadding(dp(4),dp(14),dp(4),dp(6));box.addView(title);
         TextView description=label(Frames.INFO[frame]+" · "+Frames.COMPONENTS[frame]+(Frames.COMPONENTS[frame]==1?" look":" looks"),14,Fonts.UI_REG,0xffb7b7bd);description.setPadding(dp(4),0,dp(4),dp(12));box.addView(description);
         TextView open=action("Preview "+Frames.NAMES[frame]+" and looks",v->go("face"+frame));box.addView(open);
@@ -160,14 +161,16 @@ public class SettingsActivity extends Activity {
         if(frame==Frames.DIGITAL)return look==0?"Digital":"Float";
         if(frame==Frames.DIAL)return new String[]{"Analog","Widgets","Calendar"}[look];
         if(frame==Frames.CLOCK_MUSIC)return look==0?"Analog and player":"Digital and player";
-        return Frames.COMPONENTS[frame]==1?Frames.NAMES[frame]:look==0?"Classic":"Information";
+        if(Frames.COMPONENTS[frame]==1)return Frames.NAMES[frame];
+        String[][] names={{"Cards","Cards and date"},{"Letters","Letters and date"},{"Time","Time and alarm"},{"Four tubes","Six tubes"},{"Time","Time and information"},{"Dial","Dial and date"},{"Orbits","Orbits and date"},{"Daylight","Clock and path"},{"Phase","Clock and phase"},{"Progress bars","Year of dots"},{"Date poster","Split date"},{"Weather","Clock and weather"},{"Time","Time and date"},{"4–7–8 breathing","Box breathing"},{"Command line","System information"},{"Time and date","Clock and sidebar"},{"Ring timer","Digital timer"}};
+        return frame>=Frames.FLIP && frame<=Frames.TIMER?names[frame-Frames.FLIP][look]:"Look "+(look+1);
     }
     private void variantControls(int frame){
         section("EXPLORE EVERY LOOK");
         for(int i=0;i<Frames.COMPONENTS[frame];i++){
             final int look=i;LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(10),dp(10),dp(10),dp(10));box.setBackground(card());
             box.addView(new FrameThumbnail(frame,i),new LinearLayout.LayoutParams(-1,Math.round((contentWidth()-dp(60))/2.2f)));
-            TextView select=action("Preview "+lookName(frame,i),v->{if(preview!=null)preview.lock(frame,look);scroll.smoothScrollTo(0,0);});select.setContentDescription("Preview "+Frames.NAMES[frame]+", "+lookName(frame,i));box.addView(select);add(box);
+            TextView select=action((draftLooks[frame]==i?"Selected look: ":"Choose look: ")+lookName(frame,i),v->{draftLooks[frame]=look;render(stack.peek());scroll.smoothScrollTo(0,0);});select.setContentDescription("Preview "+Frames.NAMES[frame]+", "+lookName(frame,i));box.addView(select);add(box);
         }
         add(action(Frames.contains(draftFrames,frame)?"Remove from selection":"Add to selection",v->chooseFrame(frame)));
         selectionActions();
@@ -288,7 +291,7 @@ public class SettingsActivity extends Activity {
 
     // ───────────────────────── building blocks ─────────────────────────
     private void previewCard(int lockFace) {
-        preview = new StandbyView(this); preview.setActive(true); if (lockFace >= 0) preview.lock(lockFace, Prefs.component(this,lockFace));
+        preview = new StandbyView(this); preview.setActive(true); if (lockFace >= 0) preview.lock(lockFace, draftLooks[lockFace]);
         FrameLayout frame = new FrameLayout(this); frame.addView(preview, new FrameLayout.LayoutParams(-1, -1));
         frame.setOutlineProvider(new ViewOutlineProvider() { @Override public void getOutline(View v, Outline o) { o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(22)); } }); frame.setClipToOutline(true);
         GradientDrawable edge = new GradientDrawable(); edge.setCornerRadius(dp(22)); edge.setStroke(dp(1), 0xff3a3a3c); edge.setColor(Color.TRANSPARENT); frame.setForeground(edge);
@@ -334,7 +337,7 @@ public class SettingsActivity extends Activity {
         LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(18), dp(15), dp(18), dp(10)); box.setBackground(card());
         LinearLayout top = new LinearLayout(this); top.setOrientation(LinearLayout.HORIZONTAL); top.addView(label(title, 17, Fonts.UI_SEMI, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
         int cur = Prefs.clamp(Prefs.i(this, key, def), min, max); final TextView value = label(cur + suffix, 15, Fonts.UI_SEMI, MUTED); top.addView(value); box.addView(top);
-        SeekBar bar = new SeekBar(this);bar.setContentDescription(title);bar.setMinHeight(dp(48)); bar.setMax(max - min); bar.setProgress(cur - min); bar.setPadding(0, dp(10), 0, dp(4));
+        SeekBar bar = new SeekBar(this);bar.setContentDescription(title);bar.setMinimumHeight(dp(48)); bar.setMax(max - min); bar.setProgress(cur - min); bar.setPadding(0, dp(10), 0, dp(4));
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean user) { value.setText((p + min) + suffix); if (user) { Prefs.sp(SettingsActivity.this).edit().putInt(key, p + min).apply(); changed(); } }
             @Override public void onStartTrackingTouch(SeekBar s) {} @Override public void onStopTrackingTouch(SeekBar s) {}
@@ -342,7 +345,7 @@ public class SettingsActivity extends Activity {
         box.addView(bar); add(box);
     }
     private void swatches(String title, final String key, final int[] colors) {
-        LinearLayout r = row(); r.addView(label(title, 17, Fonts.UI_SEMI, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(18),dp(15),dp(18),dp(15));box.setBackground(card());box.addView(label(title,17,Fonts.UI_SEMI,Color.WHITE));LinearLayout r=new LinearLayout(this);r.setPadding(0,dp(10),0,0);box.addView(r);
         final View[] views = new View[colors.length];
         for (int i = 0; i < colors.length; i++) {
             final int index = i, color = colors[i];
@@ -354,6 +357,6 @@ public class SettingsActivity extends Activity {
             views[i].setOnClickListener(v -> { Prefs.sp(this).edit().putInt(key, index).apply(); for (View o : views) o.invalidate(); changed(); });
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(48), dp(48)); lp.setMargins(dp(8), 0, 0, 0); r.addView(views[i], lp);
         }
-        add(r);
+        add(box);
     }
 }
