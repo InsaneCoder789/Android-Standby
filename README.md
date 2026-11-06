@@ -10,7 +10,7 @@ Use Gradle 8.13 with the Android SDK configured through `ANDROID_HOME` or an ign
 
 ## Evidence and limitations
 
-The previous local layout pass passed 146 JVM tests and built a debug APK. Lint exposed API-29 calls in the debug benchmark despite min SDK 28. Recent changes require fresh build/device validation. This is a custom display, not a replacement for Samsung's low-power AOD. Preview tools may reset app preferences and must run only on disposable test installs.
+The current preview-first iteration passes 146 JVM tests, builds a debug APK, and passes debug lint with warnings. The benchmark is guarded on Android 9. Physical-device validation and fresh screenshots of this iteration remain pending because no phone is connected. This is a custom display, not a replacement for Samsung's low-power AOD. Preview tools may reset app preferences and must run only on disposable test installs.
 
 ## Repository history
 
