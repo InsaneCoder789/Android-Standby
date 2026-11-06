@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug builds only: renders every face off-screen and measures its geometry. Run: adb shell am start -n com.rohan.standby/.AuditActivity, then read logcat tag AUDIT. -->
+        <activity android:name=".AuditActivity" android:exported="true" android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".PreviewActivity" android:exported="true" android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".ShotsActivity" android:exported="true" android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".BenchActivity" android:exported="true" android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".CallPreview" android:exported="true" android:screenOrientation="sensorLandscape"/>
+        <activity android:name=".MusicTestActivity" android:exported="true" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+    </application>
+</manifest>
