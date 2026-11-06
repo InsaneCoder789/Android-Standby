@@ -10,10 +10,11 @@ import android.util.Log;
 /** Debug only. Records every face into a RenderNode (pure UI-thread cost, independent of the GPU) and logs timings (tag BENCH). Restores the user's settings afterwards. */
 public class BenchActivity extends Activity {
     @Override public void onCreate(Bundle b) {
-        super.onCreate(b); final java.util.Map<String, ?> saved = new java.util.HashMap<>(getSharedPreferences(Prefs.FILE, MODE_PRIVATE).getAll());
+        super.onCreate(b); if (android.os.Build.VERSION.SDK_INT < 29) { Log.i("BENCH", "RenderNode benchmark requires Android 10 or newer"); finish(); return; } final java.util.Map<String, ?> saved = new java.util.HashMap<>(getSharedPreferences(Prefs.FILE, MODE_PRIVATE).getAll());
         SharedPreferences.Editor e = getSharedPreferences(Prefs.FILE, MODE_PRIVATE).edit().clear().putBoolean("burnIn", false).putBoolean("autoMusic", false); for (int f = 0; f < Prefs.FACES; f++) e.putBoolean("face" + f, true); e.commit();
         final StandbyView v = new StandbyView(this); v.setActive(true); setContentView(v);
         v.postDelayed(() -> {
+            if (android.os.Build.VERSION.SDK_INT < 29) return;
             int w = v.getWidth(), h = v.getHeight(); RenderNode node = new RenderNode("bench"); node.setPosition(0, 0, w, h);
             for (int pass = 0; pass < 2; pass++) { v.setNight(pass == 1);
                 for (int fr = 0; fr < Frames.COUNT; fr++) for (int k = 0; k < Frames.COMPONENTS[fr]; k++) { v.lock(fr, k);
