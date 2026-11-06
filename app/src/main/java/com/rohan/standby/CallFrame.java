@@ -50,11 +50,13 @@ final class CallFrame {
         boolean hasAccept=false;for(int i=0;i<count;i++)if(kinds[i]==ACCEPT)hasAccept=true;
         boolean incoming=type==1||(type==0&&hasAccept&&!chrono);boolean ongoing=!incoming&&(type==2||chrono);ringing=incoming;long now=System.currentTimeMillis();
         // Buttons: always a way to end or decline, and accept when it rings; fall back to the phone's own call control when the notification has no actions.
-        if(count==0||!hasEnd(count)){if(count<3){kinds[count]=END;labels[count]=incoming?"Decline":"End";count++;}}
-        if(incoming&&!hasAccept&&count<3){kinds[count]=ACCEPT;labels[count]="Accept";count++;}
+        boolean canControl=context.checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS)==android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if(canControl&&(count==0||!hasEnd(count))){if(count<3){kinds[count]=END;labels[count]=incoming?"Decline":"End";count++;}}
+        if(canControl&&incoming&&!hasAccept&&count<3){kinds[count]=ACCEPT;labels[count]="Accept";count++;}
+        if(count==0&&n.contentIntent!=null){intents[0]=n.contentIntent;kinds[0]=OTHER;labels[0]="Open phone";count=1;}
         int tint=incoming?0xff17314d:ongoing?0xff10301f:0xff1a1a1e;
-        paint.setStyle(Paint.Style.FILL);paint.setShader(new LinearGradient(0,0,0,h,tint,0xff050507,Shader.TileMode.CLAMP));float o=BurnIn.OVERSCAN;c.drawRect(-w*o,-h*o,w*(1+o),h*(1+o),paint);paint.setShader(null);
-        float ax=w*.235f,ay=h*.5f,ar=h*.285f;int disc=DISCS[Math.floorMod(name.hashCode(),DISCS.length)];
+        paint.setStyle(Paint.Style.FILL);paint.setShader(new RadialGradient(w*.22f,h*.40f,w*.8f,tint,0xff050507,Shader.TileMode.CLAMP));float o=BurnIn.OVERSCAN;c.drawRect(-w*o,-h*o,w*(1+o),h*(1+o),paint);paint.setShader(null);
+        float ax=w*.245f,ay=h*.5f,ar=h*.265f;int disc=DISCS[Math.floorMod(name.hashCode(),DISCS.length)];
         if(incoming)for(int i=0;i<3;i++){float t=((now%2400)/2400f+i/3f)%1f;paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(h*.012f);paint.setColor((disc&0x00ffffff)|((int)(120*(1-t))<<24));c.drawCircle(ax,ay,ar*(1.04f+.32f*t),paint);}
         paint.setStyle(Paint.Style.FILL);paint.setColor(disc);c.drawCircle(ax,ay,ar,paint);
         Bitmap photo=contactPhoto!=null?contactPhoto:avatar(n);
@@ -62,7 +64,7 @@ final class CallFrame {
         else ClockFrames.text(c,paint,initials(name),ax,ay,ar*.85f,0xffffffff,Fonts.UI_SEMI,Paint.Align.CENTER,ar*1.5f);
         float x=w*.485f,maxW=w*.43f;
         String state=incoming?"INCOMING CALL":ongoing?"ON CALL":"CALL";paint.setLetterSpacing(.14f);ClockFrames.text(c,paint,state,x,h*.215f,h*.05f,incoming?0xff64d2ff:0xff30d158,Fonts.UI_SEMI,Paint.Align.LEFT,maxW);paint.setLetterSpacing(0f);
-        ClockFrames.text(c,paint,name,x,h*.35f,h*.13f,0xffffffff,Fonts.UI_BOLD,Paint.Align.LEFT,maxW);
+        ClockFrames.text(c,paint,name,x,h*.35f,h*.112f,0xffffffff,Fonts.UI_SEMI,Paint.Align.LEFT,maxW);
         if(ongoing&&chrono&&n.when>0)ClockFrames.tabular(c,paint,Timers.format(now-n.when),x,h*.52f,h*.11f,0xe6ffffff,Fonts.ROUNDED_BOLD,maxW*.6f);
         else if(!sub.isEmpty())ClockFrames.text(c,paint,sub,x,h*.50f,h*.055f,0xb3ffffff,Fonts.UI_MED,Paint.Align.LEFT,maxW);
         float cy=h*.76f;int shown=0;int[] order=new int[count];for(int k=0;k<3;k++)for(int i=0;i<count;i++)if(kinds[i]==k)order[shown++]=i;
@@ -82,7 +84,7 @@ final class CallFrame {
         paint.setStyle(Paint.Style.FILL);c.restore();
     }
     private void voicemail(Canvas c,float x,float y,float r){
-        paint.setStyle(Paint.Style.STROKE);paint.setColor(0xffff3b30);paint.setStrokeWidth(r*.12f);c.drawCircle(x-r*.24f,y,r*.17f,paint);c.drawCircle(x+r*.24f,y,r*.17f,paint);c.drawLine(x-r*.24f,y+r*.17f,x+r*.24f,y+r*.17f,paint);paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.Style.FILL);paint.setColor(0xffffffff);for(int i=-1;i<=1;i++)c.drawCircle(x+i*r*.3f,y,r*.07f,paint);
     }
     private void drawAlarm(Canvas c,float w,float h,Notification n,String title,CharSequence detail,int count){
         c.drawColor(Color.BLACK);paint.setStyle(Paint.Style.FILL);paint.setShader(new RadialGradient(w*.2f,h*.3f,w*.7f,new int[]{0xff4a2a08,0xff000000},null,Shader.TileMode.CLAMP));c.drawRect(0,0,w,h,paint);paint.setShader(null);

@@ -58,32 +58,31 @@ final class MusicFrame {
         // Background: the album's own colours, darkening toward the bottom.
         if (Prefs.musicBackground(ctx) == 0) {
             int top = idle ? NowBar.FALLBACK_TOP : topColor, bottom = idle ? NowBar.FALLBACK_BOTTOM : bottomColor;
-            float ox = w * BurnIn.OVERSCAN, oy = h * BurnIn.OVERSCAN; paint.setShader(new LinearGradient(w * .15f, 0, w * .55f, h, top, bottom, Shader.TileMode.CLAMP)); c.drawRect(-ox, -oy, w + ox, h + oy, paint);
-            paint.setShader(new RadialGradient(w * .26f, h * .5f, h * .95f, 0x26ffffff, 0x00ffffff, Shader.TileMode.CLAMP)); c.drawRect(-ox, -oy, w + ox, h + oy, paint); paint.setShader(null);
+            float ox = w * BurnIn.OVERSCAN, oy = h * BurnIn.OVERSCAN; paint.setShader(new LinearGradient(0, 0, w, h, NowBar.mix(top, 0xff08090d, .25f), NowBar.mix(bottom, 0xff08090d, .55f), Shader.TileMode.CLAMP)); c.drawRect(-ox, -oy, w + ox, h + oy, paint);
+            paint.setShader(new RadialGradient(w * .26f, h * .5f, h * .95f, 0x18ffffff, 0x00ffffff, Shader.TileMode.CLAMP)); c.drawRect(-ox, -oy, w + ox, h + oy, paint); paint.setShader(null);
         } else { c.drawColor(Color.BLACK); }
-        float size = Math.min(h * .74f, w * .355f), artX = w * .075f, artY = (h - size) / 2f, rad = size * .075f; art.set(artX, artY, artX + size, artY + size);
-        paint.setColor(0xff1c1c1e); paint.setShadowLayer(h * .05f, 0, h * .018f, 0x88000000); c.drawRoundRect(art, rad, rad, paint); paint.setShadowLayer(0, 0, 0, 0);
+        float size = Math.min(h * .70f, w * .34f), artX = w * .07f, artY = (h - size) / 2f, rad = size * .065f; art.set(artX, artY, artX + size, artY + size);
+        paint.setColor(0xff1c1c1e); paint.setShadowLayer(h * .04f, 0, h * .015f, 0x66000000); c.drawRoundRect(art, rad, rad, paint); paint.setShadowLayer(0, 0, 0, 0);
         if (snap.art != null && !snap.art.isRecycled()) {
             c.save(); Path clip = new Path(); clip.addRoundRect(art, rad, rad, Path.Direction.CW); c.clipPath(clip); float crop = Math.min(snap.art.getWidth(), snap.art.getHeight());
             Rect src = new Rect((int) ((snap.art.getWidth() - crop) / 2), (int) ((snap.art.getHeight() - crop) / 2), (int) ((snap.art.getWidth() + crop) / 2), (int) ((snap.art.getHeight() + crop) / 2)); paint.setColor(-1); c.drawBitmap(snap.art, src, art, paint); c.restore();
         } else { paint.setShader(new LinearGradient(art.left, art.top, art.right, art.bottom, 0xff3a3a40, 0xff1c1c1e, Shader.TileMode.CLAMP)); c.drawRoundRect(art, rad, rad, paint); paint.setShader(null); note(c, art.centerX(), art.centerY(), size * .26f, 0x886e6e76); }
 
-        float left = art.right + w * .07f, right = w - w * .075f, panelW = right - left;
+        float left = art.right + w * .07f, right = w - w * .07f, panelW = right - left;
         float ringR = h * .05f; ClockFrames.chargeRing(c, paint, ctx, right - ringR * 1.45f, h * .115f, ringR, h, true); paint.setStyle(Paint.Style.FILL);
         if (idle) {
             ClockFrames.text(c, paint, "Nothing playing", left, h * .43f, h * .075f, 0xffffffff, Fonts.UI_BOLD, Paint.Align.LEFT, panelW);
             ClockFrames.text(c, paint, "Start music on your phone and it shows up here", left, h * .53f, h * .045f, 0xb3ffffff, Fonts.UI_MED, Paint.Align.LEFT, panelW);
             toggle.setEmpty(); previous.setEmpty(); next.setEmpty(); seek.setEmpty(); return;
         }
-        // Title, artist, source chip.
-        paint.setTypeface(Fonts.UI_BOLD); paint.setTextSize(h * .072f); String title = TextUtils.ellipsize(snap.title == null ? "Unknown track" : snap.title, new TextPaint(paint), panelW, TextUtils.TruncateAt.END).toString();
-        ClockFrames.text(c, paint, title, left, h * .275f, h * .072f, 0xffffffff, Fonts.UI_BOLD, Paint.Align.LEFT, 0);
-        paint.setTypeface(Fonts.UI_MED); paint.setTextSize(h * .05f); String artist = TextUtils.ellipsize(snap.artist == null ? "" : snap.artist, new TextPaint(paint), panelW, TextUtils.TruncateAt.END).toString();
-        ClockFrames.text(c, paint, artist, left, h * .362f, h * .05f, 0xb8ffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
-        if (snap.app != null) chip(c, left, h * .455f, snap.app, h, panelW);
+        // Two fixed title lines keep long metadata readable without moving the timeline or buttons.
+        title(c, snap.title == null ? "Unknown track" : snap.title, left, panelW, h);
+        paint.setTypeface(Fonts.UI_MED); paint.setTextSize(h * .045f); String artist = TextUtils.ellipsize(snap.artist == null ? "" : snap.artist, new TextPaint(paint), panelW, TextUtils.TruncateAt.END).toString();
+        ClockFrames.text(c, paint, artist, left, h * .422f, h * .045f, 0xc9ffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
+        if (snap.app != null) chip(c, left, h * .493f, snap.app, h, panelW);
         // Wavy seek bar.
         long now = SystemClock.elapsedRealtime(), pos = position(now); float frac = seeking ? seekFraction : NowBar.fraction(pos, snap.duration);
-        float sy = h * .585f, sl = left, sr = right; seekTrack.set(sl, sy, sr, sy); seek.set(sl - h * .02f, sy - h * .05f, sr + h * .02f, sy + h * .05f);
+        float sy = h * .602f, sl = left, sr = right; seekTrack.set(sl, sy, sr, sy); seek.set(sl - h * .02f, sy - h * .05f, sr + h * .02f, sy + h * .05f);
         float amp = playing() && !night ? h * .0105f : 0f, wl = h * .075f, phase = animating(ctx) ? (float) (-(now % 2200) / 2200.0 * 2 * Math.PI) : 0f, kx = sl + (sr - sl) * frac, stroke = h * .0095f;
         paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(stroke); paint.setColor(0x59ffffff); c.drawLine(kx, sy, sr, sy, paint);
         paint.setColor(0xffffffff); Path wave = new Path(); wave.moveTo(sl, sy + NowBar.waveY(0, wl, amp, phase)); for (float x = sl + 3; x < kx; x += 3) wave.lineTo(x, sy + NowBar.waveY(x - sl, wl, amp, phase)); wave.lineTo(kx, sy + NowBar.waveY(kx - sl, wl, amp, phase)); c.drawPath(wave, paint);
@@ -91,11 +90,11 @@ final class MusicFrame {
         ClockFrames.text(c, paint, NowBar.clock(seeking ? (long) (seekFraction * snap.duration) : pos), sl, h * .665f, h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
         if (snap.duration > 0) ClockFrames.text(c, paint, NowBar.clock(snap.duration), sr, h * .665f, h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.RIGHT, 0);
         // Controls: prev, play/pause (larger), next.
-        float cy = h * .795f, cx = (left + right) / 2f, step = Math.min(panelW * .27f, h * .24f), big = h * .078f, small = h * .062f;
+        float cy = h * .810f, cx = (left + right) / 2f, step = Math.min(panelW * .27f, h * .24f), big = h * .078f, small = h * .062f;
         toggle.set(cx - big, cy - big, cx + big, cy + big); previous.set(cx - step - small, cy - small, cx - step + small, cy + small); next.set(cx + step - small, cy - small, cx + step + small, cy + small);
-        paint.setStyle(Paint.Style.FILL); paint.setColor(0x29ffffff); c.drawCircle(cx, cy, big, paint); paint.setColor(0xffffffff);
+        paint.setStyle(Paint.Style.FILL); paint.setColor(0xefffffff); c.drawCircle(cx, cy, big, paint); paint.setColor(0xff24202a);
         if (playing()) pauseGlyph(c, cx, cy, h * .044f); else playGlyph(c, cx + h * .004f, cy, h * .046f);
-        skipGlyph(c, previous.centerX(), cy, h * .036f, true); skipGlyph(c, next.centerX(), cy, h * .036f, false);
+        paint.setColor(0xffffffff); skipGlyph(c, previous.centerX(), cy, h * .036f, true); skipGlyph(c, next.centerX(), cy, h * .036f, false);
     }
     // ───────────────────────────── Clock and Music: the player as a card beside a clock ─────────────────────────────
     /** comp 0: large digital time; comp 1: dial. The same player card either way. */
@@ -138,6 +137,15 @@ final class MusicFrame {
         paint.setStyle(Paint.Style.FILL); paint.setColor(0x29ffffff); c.drawCircle(cx, cy, big, paint); paint.setColor(0xffffffff);
         if (playing()) pauseGlyph(c, cx, cy, H * .042f); else playGlyph(c, cx + H * .004f, cy, H * .044f);
         skipGlyph(c, previous.centerX(), cy, H * .034f, true); skipGlyph(c, next.centerX(), cy, H * .034f, false);
+    }
+    private void title(Canvas c, String value, float left, float width, float h) {
+        paint.setTypeface(Fonts.UI_BOLD); paint.setTextSize(h * .068f);
+        if (paint.measureText(value) <= width) { ClockFrames.text(c, paint, value, left, h * .30f, h * .068f, -1, Fonts.UI_BOLD, Paint.Align.LEFT, 0); return; }
+        int split = paint.breakText(value, true, width, null); int space = value.lastIndexOf(' ', split); if (space > split / 2) split = space;
+        if (split <= 0) return;
+        String first = value.substring(0, split).trim(), second = TextUtils.ellipsize(value.substring(split).trim(), new TextPaint(paint), width, TextUtils.TruncateAt.END).toString();
+        ClockFrames.text(c, paint, first, left, h * .255f, h * .068f, -1, Fonts.UI_BOLD, Paint.Align.LEFT, 0);
+        ClockFrames.text(c, paint, second, left, h * .34f, h * .068f, -1, Fonts.UI_BOLD, Paint.Align.LEFT, 0);
     }
     private void chip(Canvas c, float x, float cy, String text, float h, float available) {
         paint.setTypeface(Fonts.UI_SEMI); paint.setTextSize(h * .034f); float pad = h * .024f, dot = h * .0085f, tw = Math.min(paint.measureText(text), Math.max(0f, Math.min(h * 1.1f, available - pad * 2.6f - dot * 2))), ch = h * .062f, cw = pad + dot * 2 + pad * .6f + tw + pad;
