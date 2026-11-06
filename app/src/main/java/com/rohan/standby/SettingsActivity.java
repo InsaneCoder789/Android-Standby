@@ -137,7 +137,7 @@ public class SettingsActivity extends Activity {
     private final class FrameThumbnail extends View {
         private final StandbyView renderer;
         FrameThumbnail(int frame,int look){super(SettingsActivity.this);renderer=new StandbyView(SettingsActivity.this);renderer.setActive(true);renderer.lock(frame,look);setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);}
-        @Override protected void onDraw(Canvas c){super.onDraw(c);int width=1100,height=500;renderer.layout(0,0,width,height);c.save();c.scale(getWidth()/(float)width,getHeight()/(float)height);renderer.draw(c);c.restore();if(isShown()&&getGlobalVisibleRect(new android.graphics.Rect()))postInvalidateDelayed(1000);}
+        @Override protected void onDraw(Canvas c){super.onDraw(c);int width=1100,height=500;renderer.layout(0,0,width,height);c.save();c.clipRect(0,0,getWidth(),getHeight());c.scale(getWidth()/(float)width,getHeight()/(float)height);renderer.draw(c);c.restore();if(isShown()&&getGlobalVisibleRect(new android.graphics.Rect()))postInvalidateDelayed(1000);}
         @Override protected void onDetachedFromWindow(){renderer.setActive(false);super.onDetachedFromWindow();}
         @Override protected void onAttachedToWindow(){super.onAttachedToWindow();renderer.setActive(true);}
     }
