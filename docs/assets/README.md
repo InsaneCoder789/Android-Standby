@@ -10,12 +10,12 @@
 
 ## Actual frame examples
 
-These are unmodified app-renderer captures from the API 37 emulator session on 7 November 2026:
+These are unmodified screenshots captured directly from the connected Samsung SM-S926B on 7 November 2026 using `adb shell screencap -p`, then pulled over ADB. The running display was navigated using ordinary swipes; no preview activity, preference reset, or sample weather injection was used.
 
-| File | Source capture | Frame |
-| --- | --- | --- |
-| `clock-digital.png` | `00_0.png` | Digital |
-| `clock-float.png` | `00_1.png` | Float |
-| `clock-calendar.png` | `01_1.png` | Dial / Widgets (analog and calendar composition) |
+| File | Frame |
+| --- | --- |
+| `clock-digital.png` | Digital, amber, 24-hour time |
+| `clock-float.png` | Float, multicolor, 24-hour time |
+| `clock-calendar.png` | Boxed analog and calendar composition |
 
-The captures use sample weather. Full local capture sets are excluded from Git; the three examples are copied here so the GitHub README has durable repository-relative image links.
+These replace the earlier emulator captures. Device settings and displayed weather were retained. Screenshot inspection covers these three layouts, not call handling or automatic activation acceptance.

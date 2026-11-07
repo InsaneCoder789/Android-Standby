@@ -18,7 +18,7 @@ Built with Java and Android Canvas, with an integrated system screensaver and an
 
 Tall numerals with a compact date, temperature, and next-alarm area. Fixed digit cells keep the composition stable as the time changes, including the transition from a one-digit to a two-digit hour.
 
-![Digital clock with green numerals and date and temperature on the right](docs/assets/clock-digital.png)
+![Digital clock with amber numerals, date, temperature, and next alarm](docs/assets/clock-digital.png)
 
 ### Float
 
@@ -32,7 +32,7 @@ A white analog dial and month view in two rounded box frames. The current date r
 
 ![Boxed analog clock beside a month calendar with the current date highlighted](docs/assets/clock-calendar.png)
 
-*Captured on 7 November 2026 using the app renderer in an Android API 37 emulator. Weather is sample data. These images demonstrate layout, not physical-device acceptance.*
+*Captured directly from the connected Samsung SM-S926B on 7 November 2026 using ADB screencap while navigating the running display. These are unmodified phone screenshots with the device’s current time, preferences, and displayed information; no debug fixtures were injected for this capture.*
 
 ## What it does
 
@@ -149,7 +149,7 @@ Sources live in [`app/src/main/java/com/rohan/standby`](app/src/main/java/com/ro
 The latest recorded full verification passed **146 JVM tests**, assembled the debug APK, and completed debug lint with **44 warnings**. Following the thumbnail-clipping repair, the APK was rebuilt and the app interface and all 44 looks were captured on an API 37 emulator without an observed fatal exception during capture.
 
 - Emulator screenshots cover rendered layouts. Music, weather, call, and alarm examples use fixtures or synthetic sessions/notifications.
-- Physical Samsung validation of this latest iteration, real incoming calls, vendor music behavior, and background activation remain pending.
+- The three featured clock looks were visually inspected and captured on the physical Samsung SM-S926B. Real incoming calls, vendor music behavior, and background activation still require separate validation.
 - Android 9 is the minimum SDK, but end-to-end physical validation on Android 9 has not been completed.
 - Media seeking and alert actions depend on what the originating app exposes. Missing access or unavailable data can produce an empty state.
 - Debug capture utilities can clear preferences and seed test data. Run them only on disposable test installs.
