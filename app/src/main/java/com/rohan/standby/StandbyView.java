@@ -65,6 +65,8 @@ public final class StandbyView extends View {
     /** Old single-face numbering, for the preview and audit tools. */
     void lockFace(int legacy) { if (legacy < 0) lock(-1, 0); else { int[] fc = Frames.fromLegacy(legacy); lock(fc[0], fc[1]); } }
     void setNight(boolean value) { if (night != value) { night = value; invalidate(); } }
+    /** Settings previews: never show a ringing call or alarm, never drift for burn-in. */
+    boolean previewMode;
     void setActive(boolean value) { active = value; if (!value) { picker = false; pickerAmount = 0; removeCallbacks(dismissPicker); removeCallbacks(longPress); } invalidate(); }
 
     private int[] navigable() { return lockedFrame >= 0 ? new int[]{lockedFrame} : frames; }
@@ -142,11 +144,11 @@ public final class StandbyView extends View {
     private void drawContent(Canvas c, float w, float h) {
         Context ctx = getContext(); ColorMatrixColorFilter filter = nightFilter(); p.setColorFilter(filter);
         if (!active) { postInvalidateDelayed(1000); return; }
-        StatusBarNotification alert = Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
+        StatusBarNotification alert = !previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
         if (alert != null) { callFrame.draw(c, w, h, alert); postInvalidateDelayed(callFrame.animated() ? 33 : 500); return; }
         int layer = -1; if (filter != null) { layerPaint.setColorFilter(filter); layer = c.saveLayer(0, 0, w, h, layerPaint); }
         int shift = c.save();
-        if (burnInOverride != null) c.translate(burnInOverride[0] * w, burnInOverride[1] * h); else if (Prefs.burnInShift(ctx)) { float[] o = BurnIn.offset(System.currentTimeMillis() / 60000, w, h); c.translate(o[0], o[1]); }
+        if (burnInOverride != null) c.translate(burnInOverride[0] * w, burnInOverride[1] * h); else if (!previewMode && Prefs.burnInShift(ctx)) { float[] o = BurnIn.offset(System.currentTimeMillis() / 60000, w, h); c.translate(o[0], o[1]); }
         ClockFrames.ringFade = 1f - Math.min(1f, pickerAmount * 1.6f);
         drawStack(c, w, h, ctx);
         c.restoreToCount(shift); if (layer >= 0) c.restoreToCount(layer);
@@ -268,7 +270,7 @@ public final class StandbyView extends View {
     // ── touch ──
     @Override public boolean onTouchEvent(MotionEvent e) {
         if (!active) return true; Context ctx = getContext(); float[] pt = logical(e.getX(), e.getY()); final float ex = pt[0], ey = pt[1], lw = pt[2], lh = pt[3], slop = lh * .03f;
-        StatusBarNotification alert = Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
+        StatusBarNotification alert = !previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
         if (alert != null) { if (e.getAction() == MotionEvent.ACTION_UP) callFrame.touch(ex, ey, alert); return true; }
         switch (e.getAction()) {
             case MotionEvent.ACTION_DOWN:

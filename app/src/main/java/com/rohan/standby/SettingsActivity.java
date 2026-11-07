@@ -39,7 +39,6 @@ public class SettingsActivity extends Activity {
     private static final int[] FLOAT_SWATCH = {0xfff06cb4, 0xff6fdc8c, 0xff5ac8fa, 0xffffb347};
     private static final int REQ_PHOTOS = 12, REQ_LOCATION = 13, REQ_NOTIFY = 15;
 
-    private int[] draftFrames; private int[] draftLooks = new int[Frames.COUNT];
     private final ArrayDeque<String> stack = new ArrayDeque<>();
     private ScrollView scroll; private LinearLayout column; private StandbyView preview;
     private final List<Runnable> refreshers = new ArrayList<>();
@@ -53,12 +52,10 @@ public class SettingsActivity extends Activity {
         super.onCreate(state); Fonts.init(this);
         getWindow().setStatusBarColor(Color.BLACK); getWindow().setNavigationBarColor(Color.BLACK);
         scroll = new ScrollView(this); scroll.setBackgroundColor(Color.BLACK); scroll.setFillViewport(true); setContentView(scroll);
-        draftFrames = state != null && state.getIntArray("draftFrames") != null ? state.getIntArray("draftFrames") : Prefs.frames(this);
-        for(int f=0;f<Frames.COUNT;f++)draftLooks[f]=Prefs.component(this,f); if(state!=null && state.getIntArray("draftLooks")!=null)draftLooks=state.getIntArray("draftLooks");
+        scroll.setOnApplyWindowInsetsListener((v, in) -> { v.setPadding(0, in.getSystemWindowInsetTop(), 0, in.getSystemWindowInsetBottom()); return in; }); scroll.setClipToPadding(true);
         String start = getIntent().getStringExtra("page"); go(start == null ? "home" : start);
 
     }
-    @Override protected void onSaveInstanceState(Bundle state){super.onSaveInstanceState(state);state.putIntArray("draftFrames",draftFrames);state.putIntArray("draftLooks",draftLooks);}
     @Override protected void onResume() { super.onResume(); Instant.sync(this); for (Runnable r : refreshers) r.run(); if (preview != null) preview.reload(); if (stack.peek() != null && stack.peek().equals("tilt")) startTilt(); }
     @Override protected void onPause() { stopTilt(); super.onPause(); }
     @Override public void onBackPressed() { if (stack.size() > 1) { stack.pop(); render(stack.peek()); } else super.onBackPressed(); }
@@ -80,32 +77,31 @@ public class SettingsActivity extends Activity {
     private void rebuild() { if (stack.peek() != null) { int y = scroll.getScrollY(); render(stack.peek()); scroll.post(() -> scroll.scrollTo(0, y)); } }
     private void render(String page) {
         stopTilt(); refreshers.clear(); preview = null;
-        column = new LinearLayout(this); column.setOrientation(LinearLayout.VERTICAL); column.setPadding(dp(20), dp(52), dp(20), dp(40));
+        column = new LinearLayout(this); column.setOrientation(LinearLayout.VERTICAL); column.setPadding(dp(20), dp(16), dp(20), dp(40));
         scroll.removeAllViews(); scroll.addView(column, new FrameLayout.LayoutParams(contentWidth(), -2, Gravity.CENTER_HORIZONTAL)); scroll.scrollTo(0, 0);
         if (page.equals("home")) home(); else if (page.equals("faces")) faces(); else if (page.startsWith("face")) face(Integer.parseInt(page.substring(4)));
         else if (page.equals("display")) display(); else if (page.equals("activation")) activation(); else if (page.equals("tilt")) tilt(); else if (page.equals("region")) region();
     }
     private void header(String title, String subtitle, boolean back) {
         if (back) { TextView b = text("‹  Back", 16, Fonts.UI_SEMI, GREEN, 0, 0, 14); b.setOnClickListener(v -> onBackPressed()); b.setPadding(0, dp(4), dp(20), dp(8)); b.setMinHeight(dp(48)); b.setGravity(Gravity.CENTER_VERTICAL); b.setContentDescription("Back"); }
-        text(title, back ? 32 : 38, Fonts.ROUNDED_BLACK, Color.WHITE, 0, 0, 0); if (subtitle != null) text(subtitle, 16, Fonts.UI_MED, MUTED, 4, 0, 18);
+        text(title, back ? 32 : 38, Fonts.ROUNDED_BLACK, Color.WHITE, 0, 0, 0); if (subtitle != null) text(subtitle, 16, Fonts.UI_MED, MUTED, 4, 0, 18); else text(" ", 4, Fonts.UI_REG, MUTED, 0, 0, 14);
     }
     private void changed() { Instant.sync(this); if (preview != null) preview.reload(); }
 
     // ───────────────────────── pages ─────────────────────────
     private void home() {
         header("Standby", "Make time your own", false); previewCard(-1);
-        nav("Explore all 23 frames", "Preview each design and every look before choosing", v -> go("faces"));
+        TextView yours = nav("Your frames", "Choose up to three of " + Frames.COUNT + ", their order and their looks", v -> go("faces"));
+        refreshers.add(() -> { yours.setText(Prefs.frames(this).length + " of " + Frames.MAX); yours.setTextColor(GREEN); });
         section("SET UP");
         TextView s1 = nav("Screensaver", "Choose Standby there. Turn Low light mode off, or Android shows its own clock in the dark.", v -> startActivity(new Intent(Settings.ACTION_DREAM_SETTINGS)));
         TextView s2 = nav("Music and calls", "Now-playing controls and incoming calls", v -> startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")));
-        TextView s3 = nav("Weather", "Uses your approximate location", v -> requestPermissions(new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOCATION));
+        TextView s3 = nav("Weather", "Uses your approximate location", v -> { if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || !shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_COARSE_LOCATION) && Prefs.b(this, "askedLocation", false)) startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getPackageName()))); else { Prefs.sp(this).edit().putBoolean("askedLocation", true).apply(); requestPermissions(new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOCATION); } });
         refreshers.add(() -> {
             String dream = Settings.Secure.getString(getContentResolver(), "screensaver_components"), l = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
             status(s1, dream != null && dream.contains(getPackageName())); status(s2, l != null && l.contains(getPackageName())); status(s3, checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED);
         });
         section("CUSTOMISE");
-        TextView f = nav("Frames", "Choose up to three, set their order and edit each", v -> go("faces"));
-        refreshers.add(() -> { f.setText(Prefs.frames(this).length + " of " + Frames.MAX); f.setTextColor(MUTED); });
         nav("Display and night", "Brightness, night mode, burn-in protection", v -> go("display"));
         nav("Activation", "Start rules, quiet hours, tilt test", v -> go("activation"));
         nav("Time and region", "12 or 24 hour, week start, temperature unit", v -> go("region"));
@@ -118,68 +114,124 @@ public class SettingsActivity extends Activity {
     }
 
     private void faces() {
-        header("Explore frames", "Preview first. Choose up to three frames, then apply your selection to Standby.", true);
-        selectionActions();
-        section("YOUR SELECTION · " + draftFrames.length + " OF " + Frames.MAX);
-        for(int i=0;i<draftFrames.length;i++) frameRow(draftFrames[i],i,draftFrames.length);
-        section("THE COLLECTION");
-        for(int f=0;f<Frames.COUNT;f++)if(!Frames.contains(draftFrames,f))frameRow(f,-1,draftFrames.length);
-        selectionActions();
+        header("Frames", "Standby shows up to three frames. In Standby, swipe sideways to move between them and up or down to change a frame's look.", true);
+        int[] sel = Prefs.frames(this);
+        section("ON YOUR STANDBY · " + sel.length + " OF " + Frames.MAX);
+        for (int i = 0; i < Frames.MAX; i++) { if (i < sel.length) slotRow(sel, i); else emptySlot(i); }
+        section("ALL " + Frames.COUNT + " FRAMES");
+        text("Tap a frame to see its looks and options. Tap + to add it straight away.", 13, Fonts.UI_REG, MUTED, 0, 4, 12);
+        LinearLayout rowView = null;
+        for (int f = 0; f < Frames.COUNT; f++) {
+            if (f % 2 == 0) { rowView = new LinearLayout(this); rowView.setOrientation(LinearLayout.HORIZONTAL); add(rowView); }
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f); if (f % 2 == 1) lp.setMargins(dp(10), 0, 0, 0); rowView.addView(tile(f, sel), lp);
+        }
+        if (Frames.COUNT % 2 == 1) { View spacer = new View(this); LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, 1, 1f); lp.setMargins(dp(10), 0, 0, 0); rowView.addView(spacer, lp); }
+    }
+    /** One of the three places on Standby: position number, live thumbnail, name and look, and move / remove buttons. */
+    private void slotRow(final int[] sel, final int pos) {
+        final int frame = sel[pos]; LinearLayout r = row(); r.setPadding(dp(12), dp(12), dp(8), dp(12));
+        TextView num = label(Integer.toString(pos + 1), 22, Fonts.ROUNDED_BLACK, GREEN); num.setGravity(Gravity.CENTER); r.addView(num, new LinearLayout.LayoutParams(dp(26), -2));
+        int tw = dp(104); LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(tw, Math.round(tw / 2.2f)); tlp.setMargins(dp(6), 0, dp(12), 0); r.addView(new Thumb(frame, Prefs.component(this, frame)), tlp);
+        LinearLayout texts = new LinearLayout(this); texts.setOrientation(LinearLayout.VERTICAL); TextView nm = label(Frames.NAMES[frame], 17, Fonts.UI_SEMI, Color.WHITE); nm.setSingleLine(true); nm.setEllipsize(android.text.TextUtils.TruncateAt.END); texts.addView(nm);
+        TextView look = label(Frames.COMPONENTS[frame] > 1 ? lookName(frame, Prefs.component(this, frame)) : "One look", 13, Fonts.UI_REG, MUTED); look.setSingleLine(true); look.setEllipsize(android.text.TextUtils.TruncateAt.END); look.setPadding(0, dp(3), 0, 0); texts.addView(look);
+        LinearLayout icons = new LinearLayout(this); icons.setOrientation(LinearLayout.HORIZONTAL); icons.setPadding(0, dp(4), 0, 0);
+        icons.addView(icon("↑", "Move " + Frames.NAMES[frame] + " earlier", pos > 0, Color.WHITE, v -> { Prefs.saveFrames(this, Frames.move(Prefs.frames(this), pos, -1)); changed(); rebuild(); }));
+        icons.addView(icon("↓", "Move " + Frames.NAMES[frame] + " later", pos < sel.length - 1, Color.WHITE, v -> { Prefs.saveFrames(this, Frames.move(Prefs.frames(this), pos, 1)); changed(); rebuild(); }));
+        icons.addView(icon("✕", "Remove " + Frames.NAMES[frame], sel.length > 1, RED, v -> removeFrame(frame)));
+        texts.addView(icons); r.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
+        r.setOnClickListener(v -> go("face" + frame)); r.setContentDescription("Position " + (pos + 1) + ", " + Frames.NAMES[frame] + ". Open"); add(r);
+    }
+    private void emptySlot(int pos) {
+        LinearLayout r = row(); GradientDrawable g = new GradientDrawable(); g.setCornerRadius(dp(18)); g.setStroke(dp(1), 0xff3a3a3c, dp(6), dp(5)); g.setColor(Color.BLACK); r.setBackground(g); r.setMinimumHeight(dp(72));
+        TextView num = label(Integer.toString(pos + 1), 22, Fonts.ROUNDED_BLACK, 0xff48484a); num.setGravity(Gravity.CENTER); r.addView(num, new LinearLayout.LayoutParams(dp(26), -2));
+        TextView t = label("Empty. Add a frame from the list below", 15, Fonts.UI_MED, MUTED); t.setPadding(dp(14), 0, 0, 0); r.addView(t, new LinearLayout.LayoutParams(0, -2, 1f)); add(r);
+    }
+    /** A square-ish button for the slot rows; 48dp so it is easy to hit. */
+    private TextView icon(String glyph, String description, boolean enabled, int color, View.OnClickListener click) {
+        TextView v = label(glyph, 20, Fonts.UI_SEMI, color); v.setGravity(Gravity.CENTER); v.setContentDescription(description); v.setLayoutParams(new LinearLayout.LayoutParams(dp(48), dp(44)));
+        v.setEnabled(enabled); v.setAlpha(enabled ? 1f : .25f); if (enabled) { v.setOnClickListener(click); v.setFocusable(true); } return v;
+    }
+    /** Grid tile in the collection. Shows the slot number when the frame is on Standby, otherwise a + that adds it. */
+    private View tile(final int frame, int[] sel) {
+        int pos = -1; for (int i = 0; i < sel.length; i++) if (sel[i] == frame) pos = i;
+        LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(8), dp(8), dp(8), dp(10));
+        GradientDrawable g = card(); if (pos >= 0) g.setStroke(dp(2), GREEN); box.setBackground(g);
+        int tw = (contentWidth() - dp(40) - dp(10)) / 2 - dp(16); box.addView(new Thumb(frame, Prefs.component(this, frame)), new LinearLayout.LayoutParams(-1, Math.round(tw / 2.2f)));
+        LinearLayout bottom = new LinearLayout(this); bottom.setOrientation(LinearLayout.HORIZONTAL); bottom.setGravity(Gravity.CENTER_VERTICAL); bottom.setPadding(dp(4), dp(8), 0, 0);
+        LinearLayout texts = new LinearLayout(this); texts.setOrientation(LinearLayout.VERTICAL);
+        TextView name = label(Frames.NAMES[frame], 15, Fonts.UI_SEMI, Color.WHITE); name.setSingleLine(true); name.setEllipsize(android.text.TextUtils.TruncateAt.END); texts.addView(name);
+        TextView sub = label(pos >= 0 ? "On Standby · " + (pos + 1) : Frames.COMPONENTS[frame] + (Frames.COMPONENTS[frame] == 1 ? " look" : " looks"), 12, Fonts.UI_MED, pos >= 0 ? GREEN : MUTED); sub.setPadding(0, dp(2), 0, 0); texts.addView(sub);
+        bottom.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
+        if (pos < 0) { TextView plus = label("+", 22, Fonts.UI_SEMI, Color.BLACK); plus.setGravity(Gravity.CENTER); GradientDrawable pg = new GradientDrawable(); pg.setShape(GradientDrawable.OVAL); pg.setColor(Color.WHITE); plus.setBackground(pg);
+            plus.setContentDescription("Add " + Frames.NAMES[frame] + " to Standby"); plus.setOnClickListener(v -> addFrame(frame)); bottom.addView(plus, new LinearLayout.LayoutParams(dp(40), dp(40))); }
+        box.addView(bottom); box.setOnClickListener(v -> go("face" + frame)); box.setContentDescription(Frames.NAMES[frame] + (pos >= 0 ? ", on Standby" : "") + ". Open");
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); box.setLayoutParams(lp); return box;
     }
     private TextView action(String title, View.OnClickListener click){
-        TextView v=label(title,16,Fonts.UI_SEMI,Color.WHITE);v.setGravity(Gravity.CENTER);v.setMinHeight(dp(48));v.setPadding(dp(14),dp(12),dp(14),dp(12));v.setBackground(card());v.setOnClickListener(click);v.setFocusable(true);v.setContentDescription(title);return v;
+        TextView v=label(title,16,Fonts.UI_SEMI,Color.WHITE);v.setGravity(Gravity.CENTER);v.setMinHeight(dp(52));v.setPadding(dp(14),dp(12),dp(14),dp(12));v.setBackground(card());v.setOnClickListener(click);v.setFocusable(true);v.setContentDescription(title);return v;
     }
-    private void selectionActions(){
-        TextView apply=action("Apply "+draftFrames.length+" frames to Standby",v->{Prefs.saveFrames(this,draftFrames);android.content.SharedPreferences.Editor editor=Prefs.sp(this).edit();for(int f:draftFrames)editor.putInt("comp"+f,draftLooks[f]);editor.apply();changed();Toast.makeText(this,"Selection applied to Standby",Toast.LENGTH_SHORT).show();rebuild();});add(apply);
-        TextView cancel=action("Reset selection to current Standby",v->{draftFrames=Prefs.frames(this);for(int f=0;f<Frames.COUNT;f++)draftLooks[f]=Prefs.component(this,f);rebuild();});add(cancel);
+    private void addFrame(final int frame) {
+        int[] sel = Prefs.frames(this); if (Frames.contains(sel, frame)) return;
+        if (sel.length < Frames.MAX) { Prefs.saveFrames(this, Frames.add(sel, frame)); changed(); Toast.makeText(this, Frames.NAMES[frame] + " added to Standby", Toast.LENGTH_SHORT).show(); rebuild(); return; }
+        String[] names = new String[sel.length]; for (int i = 0; i < names.length; i++) names[i] = (i + 1) + ".  " + Frames.NAMES[sel[i]];
+        new AlertDialog.Builder(this).setTitle("Standby is full. Replace which frame with " + Frames.NAMES[frame] + "?").setItems(names, (d, index) -> {
+            int[] next = Prefs.frames(this).clone(); next[index] = frame; Prefs.saveFrames(this, next); changed(); rebuild(); }).setNegativeButton("Cancel", null).show();
     }
-    /** Actual renderer preview, isolated from input so browsing never operates music or changes a live frame. */
-    private final class FrameThumbnail extends View {
-        private final StandbyView renderer;
-        FrameThumbnail(int frame,int look){super(SettingsActivity.this);renderer=new StandbyView(SettingsActivity.this);renderer.setActive(true);renderer.lock(frame,look);setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);}
-        @Override protected void onDraw(Canvas c){super.onDraw(c);int width=1100,height=500;renderer.layout(0,0,width,height);c.save();c.clipRect(0,0,getWidth(),getHeight());c.scale(getWidth()/(float)width,getHeight()/(float)height);renderer.draw(c);c.restore();if(isShown()&&getGlobalVisibleRect(new android.graphics.Rect()))postInvalidateDelayed(1000);}
-        @Override protected void onDetachedFromWindow(){renderer.setActive(false);super.onDetachedFromWindow();}
-        @Override protected void onAttachedToWindow(){super.onAttachedToWindow();renderer.setActive(true);}
+    private void removeFrame(int frame) {
+        int[] sel = Prefs.frames(this); if (sel.length <= 1) { Toast.makeText(this, "Standby needs at least one frame", Toast.LENGTH_SHORT).show(); return; }
+        Prefs.saveFrames(this, Frames.remove(sel, frame)); changed(); rebuild();
     }
-    private void frameRow(final int frame, final int pos, final int total){
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(12),dp(12),dp(12),dp(12));box.setBackground(card());
-        FrameThumbnail image=new FrameThumbnail(frame,draftLooks[frame]);box.addView(image,new LinearLayout.LayoutParams(-1,Math.round((contentWidth()-dp(64))/2.2f)));
-        TextView title=label(Frames.NAMES[frame]+(pos>=0?"  ·  Selected "+(pos+1):""),20,Fonts.UI_SEMI,Color.WHITE);title.setPadding(dp(4),dp(14),dp(4),dp(6));box.addView(title);
-        TextView description=label(Frames.INFO[frame]+" · "+Frames.COMPONENTS[frame]+(Frames.COMPONENTS[frame]==1?" look":" looks"),14,Fonts.UI_REG,0xffb7b7bd);description.setPadding(dp(4),0,dp(4),dp(12));box.addView(description);
-        TextView open=action("Preview "+Frames.NAMES[frame]+" and looks",v->go("face"+frame));box.addView(open);
-        if(pos>=0){LinearLayout controls=new LinearLayout(this);controls.setOrientation(LinearLayout.HORIZONTAL);TextView earlier=action("Earlier",v->moveFrame(pos,-1));earlier.setEnabled(pos>0);earlier.setAlpha(pos>0?1f:.4f);earlier.setContentDescription("Move "+Frames.NAMES[frame]+" earlier");controls.addView(earlier,new LinearLayout.LayoutParams(0,-2,1));TextView later=action("Later",v->moveFrame(pos,1));later.setEnabled(pos<total-1);later.setAlpha(pos<total-1?1f:.4f);later.setContentDescription("Move "+Frames.NAMES[frame]+" later");controls.addView(later,new LinearLayout.LayoutParams(0,-2,1));box.addView(controls);}
-        add(box);
-    }
-    private void moveFrame(int pos,int dir){draftFrames=Frames.move(draftFrames,pos,dir);rebuild();}
-    private void chooseFrame(int frame){
-        if(Frames.contains(draftFrames,frame)){if(draftFrames.length==1){Toast.makeText(this,"Keep at least one frame",Toast.LENGTH_SHORT).show();return;}draftFrames=Frames.remove(draftFrames,frame);rebuild();return;}
-        if(draftFrames.length<Frames.MAX){draftFrames=Frames.add(draftFrames,frame);rebuild();return;}
-        String[] names=new String[draftFrames.length];for(int i=0;i<names.length;i++)names[i]="Replace "+Frames.NAMES[draftFrames[i]];
-        new AlertDialog.Builder(this).setTitle("Choose a frame to replace").setItems(names,(dialog,index)->{draftFrames=draftFrames.clone();draftFrames[index]=frame;rebuild();}).setNegativeButton("Cancel",null).show();
+    /** A still render of a frame, refreshed every 30 seconds while on screen. Never shows calls or alarms, never takes touches. */
+    private final class Thumb extends View {
+        private final StandbyView renderer; private android.graphics.Bitmap bitmap; private long drawnAt;
+        Thumb(int frame, int look) {
+            super(SettingsActivity.this); renderer = new StandbyView(SettingsActivity.this); renderer.previewMode = true; renderer.setActive(true); renderer.lock(frame, look);
+            setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            setOutlineProvider(new ViewOutlineProvider() { @Override public void getOutline(View v, Outline o) { o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(10)); } }); setClipToOutline(true);
+        }
+        @Override protected void onDraw(Canvas c) {
+            int w = getWidth(), h = getHeight(); if (w <= 0 || h <= 0) return; long now = System.currentTimeMillis();
+            if (bitmap == null || bitmap.getWidth() != w || bitmap.getHeight() != h || now - drawnAt > 30_000) {
+                if (bitmap == null || bitmap.getWidth() != w || bitmap.getHeight() != h) bitmap = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888);
+                bitmap.eraseColor(Color.BLACK); Canvas bc = new Canvas(bitmap); int rw = 1100, rh = 500; renderer.layout(0, 0, rw, rh); bc.scale(w / (float) rw, h / (float) rh); renderer.draw(bc); drawnAt = now;
+            }
+            c.drawBitmap(bitmap, 0, 0, null); if (isShown()) postInvalidateDelayed(30_000);
+        }
     }
     private String lookName(int frame,int look){
         if(frame==Frames.DIGITAL)return look==0?"Digital":"Float";
         if(frame==Frames.DIAL)return new String[]{"Analog","Widgets","Calendar"}[look];
         if(frame==Frames.CLOCK_MUSIC)return look==0?"Analog and player":"Digital and player";
         if(Frames.COMPONENTS[frame]==1)return Frames.NAMES[frame];
-        String[][] names={{"Cards","Cards and date"},{"Letters","Letters and date"},{"Time","Time and alarm"},{"Four tubes","Six tubes"},{"Time","Time and information"},{"Dial","Dial and date"},{"Orbits","Orbits and date"},{"Daylight","Clock and path"},{"Phase","Clock and phase"},{"Progress bars","Year of dots"},{"Date poster","Split date"},{"Weather","Clock and weather"},{"Time","Time and date"},{"4–7–8 breathing","Box breathing"},{"Command line","System information"},{"Time and date","Clock and sidebar"},{"Ring timer","Digital timer"}};
+        String[][] names={{"Cards","Cards and date"},{"Letters","Letters and date"},{"Time","Time and date"},{"Four tubes","Six tubes"},{"Time","Time and date"},{"Dial","Dial and date"},{"Orbits","Orbits and date"},{"Daylight","Clock and path"},{"Phase","Clock and phase"},{"Progress bars","Year of dots"},{"Date poster","Split date"},{"Weather","Clock and weather"},{"Time","Time and date"},{"4–7–8 breathing","Box breathing"},{"Command line","System information"},{"Time and date","Clock and sidebar"},{"Ring timer","Digital timer"}};
         return frame>=Frames.FLIP && frame<=Frames.TIMER?names[frame-Frames.FLIP][look]:"Look "+(look+1);
-    }
-    private void variantControls(int frame){
-        section("EXPLORE EVERY LOOK");
-        for(int i=0;i<Frames.COMPONENTS[frame];i++){
-            final int look=i;LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(10),dp(10),dp(10),dp(10));box.setBackground(card());
-            box.addView(new FrameThumbnail(frame,i),new LinearLayout.LayoutParams(-1,Math.round((contentWidth()-dp(60))/2.2f)));
-            TextView select=action((draftLooks[frame]==i?"Selected look: ":"Choose look: ")+lookName(frame,i),v->{draftLooks[frame]=look;render(stack.peek());scroll.smoothScrollTo(0,0);});select.setContentDescription("Preview "+Frames.NAMES[frame]+", "+lookName(frame,i));box.addView(select);add(box);
-        }
-        add(action(Frames.contains(draftFrames,frame)?"Remove from selection":"Add to selection",v->chooseFrame(frame)));
-        selectionActions();
     }
 
     private void face(int f) {
-        header(Frames.NAMES[f], Frames.INFO[f], true); previewCard(f);variantControls(f);
-        section("OPTIONS");
-        if (f == Frames.DIGITAL) { swatches("Colour", "digital", ClockFrames.DIGITAL_COLORS); toggle("Show date", null, "digitalDate", true); toggle("Show temperature", "Needs weather set up", "digitalTemp", true); toggle("Show next alarm", null, "digitalAlarm", true); swatches("Float colours", "float", FLOAT_SWATCH); toggle("Show colon bubbles", "On the Float look", "floatColon", true); }
+        header(Frames.NAMES[f], Frames.INFO[f], true); previewCard(f);
+        int[] sel = Prefs.frames(this); int pos = -1; for (int i = 0; i < sel.length; i++) if (sel[i] == f) pos = i;
+        if (pos >= 0) {
+            TextView on = label("✓  On your Standby, position " + (pos + 1) + " of " + sel.length, 15, Fonts.UI_SEMI, GREEN); on.setPadding(dp(4), dp(14), 0, dp(10)); column.addView(on);
+            TextView remove = action("Remove from Standby", v -> removeFrame(f)); remove.setTextColor(sel.length > 1 ? RED : MUTED); add(remove);
+        } else { TextView addB = action(sel.length < Frames.MAX ? "Add to Standby" : "Add to Standby (replace one)", v -> addFrame(f)); GradientDrawable g = new GradientDrawable(); g.setCornerRadius(dp(18)); g.setColor(GREEN); addB.setBackground(g); addB.setTextColor(Color.BLACK); LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2); lp.setMargins(0, dp(14), 0, dp(10)); column.addView(addB, lp); }
+        if (Frames.COMPONENTS[f] > 1) {
+            section("LOOKS · " + Frames.COMPONENTS[f]);
+            text("In Standby, swipe up or down to switch. The one you pick here is where it starts.", 13, Fonts.UI_REG, MUTED, 0, 4, 12);
+            int cur = Prefs.component(this, f); LinearLayout rowView = null;
+            for (int i = 0; i < Frames.COMPONENTS[f]; i++) {
+                if (i % 2 == 0) { rowView = new LinearLayout(this); rowView.setOrientation(LinearLayout.HORIZONTAL); add(rowView); }
+                final int look = i; LinearLayout box = new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(8), dp(8), dp(8), dp(10));
+                GradientDrawable g = card(); if (i == cur) g.setStroke(dp(2), GREEN); box.setBackground(g);
+                int tw = (contentWidth() - dp(40) - dp(10)) / 2 - dp(16); box.addView(new Thumb(f, i), new LinearLayout.LayoutParams(-1, Math.round(tw / 2.2f)));
+                TextView name = label((i == cur ? "✓  " : "") + lookName(f, i), 14, Fonts.UI_SEMI, i == cur ? GREEN : Color.WHITE); name.setPadding(dp(4), dp(8), 0, 0); name.setSingleLine(true); name.setEllipsize(android.text.TextUtils.TruncateAt.END); box.addView(name);
+                box.setContentDescription(lookName(f, i) + (i == cur ? ", selected" : ""));
+                box.setOnClickListener(v -> { Prefs.sp(this).edit().putInt("comp" + f, look).apply(); changed(); rebuild(); });
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, -2, 1f); if (i % 2 == 1) lp.setMargins(dp(10), 0, 0, 0); rowView.addView(box, lp);
+            }
+            if (Frames.COMPONENTS[f] % 2 == 1) { View spacer = new View(this); LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, 1, 1f); lp.setMargins(dp(10), 0, 0, 0); rowView.addView(spacer, lp); }
+        }
+        if (f != Frames.DIGITAL) section("OPTIONS");
+        if (f == Frames.DIGITAL) { section("DIGITAL LOOK"); swatches("Colour", "digital", ClockFrames.DIGITAL_COLORS); toggle("Show date", null, "digitalDate", true); toggle("Show temperature", "Needs weather set up", "digitalTemp", true); toggle("Show next alarm", null, "digitalAlarm", true); section("FLOAT LOOK"); swatches("Colours", "float", FLOAT_SWATCH); toggle("Show colon bubbles", null, "floatColon", true); }
         else if (f == Frames.DIAL) { choice("Analog right side", "analogSide", new String[]{"Weather", "Date"}, 0); toggle("Seconds hand", "On every dial", "dialSeconds", true); toggle("Numerals", "On every dial", "dialNumerals", true); toggle("Dim weekends", "On the Widgets and Calendar looks", "dimWeekends", true); }
         else if (f == Frames.MUSIC || f == Frames.CLOCK_MUSIC) {
             choice("Background", "musicBackground", new String[]{"Album colours", "Black"}, 0); toggle("Animated seek bar", "The wave moves while music plays", "musicWave", true); toggle("Switch to the player when music plays", "Standby moves to Music or Clock and Music by itself when music starts", "autoMusic", true); toggle("Go back when it stops", "Returns to the frame you were on after 30 seconds of silence", "autoReturn", true);
@@ -192,14 +244,13 @@ public class SettingsActivity extends Activity {
             if (NewFrames.PAL[f] != null) swatches("Colour", "accent" + f, NewFrames.PAL[f]);
             if (f == Frames.SUN || f == Frames.MOON || f == Frames.WEATHER) text("Uses your approximate location. Allow it on the home screen.", 13, Fonts.UI_REG, MUTED, 4, 4, 0);
             if (f == Frames.PROGRESS || f == Frames.WORD) text("Week start is in Time and region.", 13, Fonts.UI_REG, MUTED, 4, 4, 0);
-            text("Tap the preview, or swipe up or down in Standby, to see this frame's " + Frames.COMPONENTS[f] + " looks.", 13, Fonts.UI_REG, MUTED, 8, 4, 0);
         }
     }
 
     private void photos() {
         TextView pick = nav("Choose photos", "Pick one or many. Several play as a slideshow.", v -> { Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT); i.setType("image/*"); i.addCategory(Intent.CATEGORY_OPENABLE); i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); startActivityForResult(i, REQ_PHOTOS); });
         refreshers.add(() -> { int n = Prefs.photoUris(this).size(); pick.setText(n == 0 ? "None" : n + (n == 1 ? " photo" : " photos")); pick.setTextColor(n == 0 ? MUTED : GREEN); });
-        LinearLayout clear = row(); clear.addView(label("Clear photos", 17, Fonts.UI_SEMI, RED), new LinearLayout.LayoutParams(0, -2, 1f)); add(clear);
+        LinearLayout clear = row(); clear.addView(label("Clear photos", 17, Fonts.UI_SEMI, RED), new LinearLayout.LayoutParams(0, -2, 1f)); if (!Prefs.photoUris(this).isEmpty()) add(clear);
         clear.setOnClickListener(v -> { Prefs.sp(this).edit().remove("photoList").remove("photo").apply(); changed(); rebuild(); });
         choice("Change every", "photoInterval", new String[]{"15 sec", "1 min", "5 min", "30 min"}, 1);
         toggle("Show clock over photo", null, "photoClock", true); slider("Dim photo", "photoDim", 0, 70, 0, "%");
@@ -210,7 +261,7 @@ public class SettingsActivity extends Activity {
         for (final String z : zones) {
             LinearLayout r = row(); LinearLayout texts = new LinearLayout(this); texts.setOrientation(LinearLayout.VERTICAL); texts.addView(label(WorldCities.city(z), 17, Fonts.UI_SEMI, Color.WHITE));
             TextView sub = label(WorldCities.relative(local, TimeZone.getTimeZone(z), now), 13, Fonts.UI_REG, MUTED); sub.setPadding(0, dp(3), 0, 0); texts.addView(sub); r.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
-            TextView remove = label("Remove", 15, Fonts.UI_SEMI, RED); remove.setPadding(dp(12), dp(6), 0, dp(6)); r.addView(remove); add(r);
+            TextView remove = label("Remove", 15, Fonts.UI_SEMI, RED); remove.setPadding(dp(16), dp(14), dp(4), dp(14)); remove.setMinWidth(dp(48)); remove.setContentDescription("Remove " + WorldCities.city(z)); r.addView(remove); add(r);
             remove.setOnClickListener(v -> { List<String> keep = new ArrayList<>(); for (String o : Prefs.worldZones(this)) if (!o.equals(z)) keep.add(o); Prefs.saveWorldZones(this, keep.toArray(new String[0])); changed(); rebuild(); });
         }
         if (zones.length < 4) {
@@ -240,7 +291,7 @@ public class SettingsActivity extends Activity {
         toggle("Open instantly", "Opens by itself the moment the phone is charging at the landscape angle, even from the always-on display", "instantMode", true);
         TextView overlay = nav("Display over other apps", "The one permission Instant mode needs, so Standby can open over your lock screen", v -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName()))));
         refreshers.add(() -> status(overlay, Instant.overlayAllowed(this)));
-        TextView notify = nav("Notifications", "Lets Android show the small “Standby is ready” notice that keeps Instant mode running", v -> { if (android.os.Build.VERSION.SDK_INT >= 33) requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFY); });
+        TextView notify = nav("Notifications", "Lets Android show the small “Standby is ready” notice that keeps Instant mode running", v -> { if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED && shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFY); else startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())); });
         refreshers.add(() -> status(notify, android.os.Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED));
         toggle("Only when locked", "Like StandBy on an iPhone: it won't interrupt you while you are using the phone", "instantOnlyLocked", true);
         choice("Hold still for", "instantHold", new String[]{"1 second", "2 seconds", "3 seconds"}, 0);
@@ -291,12 +342,12 @@ public class SettingsActivity extends Activity {
 
     // ───────────────────────── building blocks ─────────────────────────
     private void previewCard(int lockFace) {
-        preview = new StandbyView(this); preview.setActive(true); if (lockFace >= 0) preview.lock(lockFace, draftLooks[lockFace]);
+        preview = new StandbyView(this); preview.setActive(true); preview.previewMode = true; if (lockFace >= 0) preview.lock(lockFace, Prefs.component(this, lockFace));
         FrameLayout frame = new FrameLayout(this); frame.addView(preview, new FrameLayout.LayoutParams(-1, -1));
         frame.setOutlineProvider(new ViewOutlineProvider() { @Override public void getOutline(View v, Outline o) { o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), dp(22)); } }); frame.setClipToOutline(true);
         GradientDrawable edge = new GradientDrawable(); edge.setCornerRadius(dp(22)); edge.setStroke(dp(1), 0xff3a3a3c); edge.setColor(Color.TRANSPARENT); frame.setForeground(edge);
         int w = contentWidth() - dp(40); column.addView(frame, new LinearLayout.LayoutParams(-1, Math.round(w / 2.2f)));
-        text(lockFace >= 0 ? "Live preview. Tap it to change what the frame shows." : "Live preview. Swipe it like Standby: sideways for frames, up or down for looks.", 13, Fonts.UI_REG, MUTED, 8, 0, 0);
+        if (lockFace < 0) text("Live preview. Swipe it like Standby: sideways for frames, up or down for looks.", 13, Fonts.UI_REG, MUTED, 8, 4, 14);
     }
     private TextView text(String t, float sp, Typeface face, int color, int top, int left, int bottom) { TextView v = label(t, sp, face, color); LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-2, -2); lp.setMargins(dp(left), dp(top), 0, dp(bottom)); column.addView(v, lp); return v; }
     private TextView label(String t, float sp, Typeface face, int color) { TextView v = new TextView(this); v.setText(t); v.setTextSize(sp); v.setTypeface(face); v.setTextColor(color); v.setIncludeFontPadding(false); return v; }
