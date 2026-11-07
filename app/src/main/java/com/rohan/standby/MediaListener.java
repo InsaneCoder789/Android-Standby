@@ -32,7 +32,14 @@ public class MediaListener extends NotificationListenerService {
     @Override public void onNotificationPosted(android.service.notification.StatusBarNotification n) {
         try{trackTimer(n);}catch(RuntimeException ignored){}
         String category=n.getNotification().category;
-        synchronized(alerts){alerts.remove(n.getKey());if(android.app.Notification.CATEGORY_CALL.equals(category)||android.app.Notification.CATEGORY_ALARM.equals(category))alerts.put(n.getKey(),n);}
+        synchronized(alerts){alerts.remove(n.getKey());if(ringing(n.getNotification()))alerts.put(n.getKey(),n);}
+    }
+    /** Only a call or alarm that is ringing right now takes over the screen. Missed, upcoming and snoozed alarm notices share the alarm category but are just notices. */
+    static boolean ringing(android.app.Notification no){
+        String category=no.category;if(!android.app.Notification.CATEGORY_CALL.equals(category)&&!android.app.Notification.CATEGORY_ALARM.equals(category))return false;
+        String ch=no.getChannelId()==null?"":no.getChannelId().toLowerCase(java.util.Locale.ROOT);
+        if(ch.contains("missed")||ch.contains("upcoming")||ch.contains("snooze"))return false;
+        return no.fullScreenIntent!=null||(no.flags&android.app.Notification.FLAG_ONGOING_EVENT)!=0;
     }
     @Override public void onNotificationRemoved(android.service.notification.StatusBarNotification n) { synchronized(alerts){alerts.remove(n.getKey());} synchronized(timers){timers.remove(n.getKey());} }
     android.service.notification.StatusBarNotification alert() {
