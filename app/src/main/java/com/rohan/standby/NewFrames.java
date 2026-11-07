@@ -33,19 +33,27 @@ final class NewFrames {
     private static String date(String pattern) { return new SimpleDateFormat(pattern, Locale.getDefault()).format(new Date()); }
     private static String up(String s) { return s.toUpperCase(Locale.getDefault()); }
     private static float T(Canvas c, Paint p, String v, float x, float cy, float size, int color, Typeface f, Paint.Align a, float maxW) { return ClockFrames.text(c, p, v, x, cy, size, color, f, a, maxW); }
-    /** Stable numeric cells: fit a reserved skeleton, never the current numeral's ink. */
+    /**
+     * Stable numeric text: every digit gets a cell as wide as the widest digit, so a value never shifts or resizes as its digits change.
+     * The layout follows the value's own shape ("1:23" is three cells, "12:34" four), so it only moves when the number of digits changes, such as 9:59 to 10:00.
+     */
     private static float NT(Canvas c, Paint p, String value, float x, float cy, float size, int color, Typeface face, Paint.Align align, float maxW) {
-        String skeleton = value.indexOf(':') >= 0 ? (value.indexOf(':') != value.lastIndexOf(':') ? "88:88:88" : "88:88") : value.endsWith("°") ? "-888°" : value.endsWith("%") ? "888%" : value.length() <= 2 ? "88" : value;
-        String v=value; if(value.indexOf(':')==1)v=" "+value;
         p.setStyle(Paint.Style.FILL); p.setShader(null); p.setTypeface(face); p.setTextAlign(Paint.Align.LEFT); p.setTextScaleX(1f); p.setTextSize(size);
-        float digit=0;for(char d='0';d<='9';d++)digit=Math.max(digit,p.measureText(String.valueOf(d)));
-        float unit=digit+size*.015f, total=0;for(char ch:skeleton.toCharArray())total+=ch==':'?unit*.45f:unit;
-        float scale=maxW>0?Math.min(1f,maxW/total):1f; p.setTextSize(size*scale);unit*=scale;total*=scale;
-        float left=align==Paint.Align.CENTER?x-total/2:align==Paint.Align.RIGHT?x-total:x;
-        RectF cap=Ink.bounds(p,"H0");float base=cy-(cap.top+cap.bottom)/2; p.setColor(color);
-        // Short dates reserve two positions, retaining one font size while preserving the requested edge.
-        if(v.indexOf(':')<0 && !v.endsWith("°") && !v.endsWith("%") && v.length()<skeleton.length())v=(align==Paint.Align.LEFT?v+" ":" "+v);
-        float pos=left;for(char ch:v.toCharArray()){float cell=ch==':'?unit*.45f:unit;if(ch!=' '){RectF ink=Ink.bounds(p,String.valueOf(ch));c.drawText(String.valueOf(ch),pos+(cell-ink.width())/2-ink.left,base,p);}pos+=cell;}
+        float total = cells(p, value, size), scale = maxW > 0 ? Math.min(1f, maxW / total) : 1f; p.setTextSize(size * scale); total = cells(p, value, size * scale);
+        float digit = 0; for (char d = '0'; d <= '9'; d++) digit = Math.max(digit, p.measureText(String.valueOf(d))); float unit = digit + size * scale * .015f;
+        float left = align == Paint.Align.CENTER ? x - total / 2 : align == Paint.Align.RIGHT ? x - total : x;
+        RectF cap = Ink.bounds(p, "H0"); float base = cy - (cap.top + cap.bottom) / 2; p.setColor(color);
+        for (char ch : value.toCharArray()) {
+            String s1 = String.valueOf(ch); float cell = Character.isDigit(ch) ? unit : ch == ':' ? unit * .45f : p.measureText(s1);
+            if (ch != ' ') { if (Character.isDigit(ch) || ch == ':') { RectF ink = Ink.bounds(p, s1); c.drawText(s1, left + (cell - ink.width()) / 2 - ink.left, base, p); } else c.drawText(s1, left, base, p); }
+            left += cell;
+        }
+        return total;
+    }
+    /** Width of {@link #NT} text at the paint's current typeface and the given size. */
+    private static float cells(Paint p, String value, float size) {
+        p.setTextSize(size); float digit = 0; for (char d = '0'; d <= '9'; d++) digit = Math.max(digit, p.measureText(String.valueOf(d))); float unit = digit + size * .015f, total = 0;
+        for (char ch : value.toCharArray()) total += Character.isDigit(ch) ? unit : ch == ':' ? unit * .45f : p.measureText(String.valueOf(ch));
         return total;
     }
     /** Spaced capitals for small labels. */
@@ -123,14 +131,14 @@ final class NewFrames {
     private static void word(Canvas c, float w, float h, Context ctx, int comp) {
         Paint p = paint(); Calendar now = Calendar.getInstance(); List<int[]> lit = WordClock.lit(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE));
         boolean[][] on = new boolean[WordClock.ROWS][WordClock.COLS]; for (int[] r : lit) for (int i = 0; i < r[2]; i++) on[r[0]][r[1] + i] = true;
-        float cell = Math.min(h * .079f, w * (comp == 1 ? .44f : .82f) / (WordClock.COLS + 1f)), gx = comp == 1 ? w * .07f : (w - cell * WordClock.COLS) / 2f, gy = (h * .94f - cell * WordClock.ROWS) / 2f;
+        float cell = h * .080f, cellX = comp == 1 ? Math.min(cell * 1.25f, w * .46f / WordClock.COLS) : Math.min(cell * 1.5f, w * .76f / WordClock.COLS), gx = comp == 1 ? w * .07f : (w - cellX * WordClock.COLS) / 2f, gy = (h - cell * WordClock.ROWS) / 2f;
         p.setTypeface(Fonts.UI_BOLD); p.setTextSize(cell * .60f); p.setTextAlign(Paint.Align.CENTER); RectF cap = Ink.bounds(p, "H"); float base = -(cap.top + cap.bottom) / 2f;
         for (int r = 0; r < WordClock.ROWS; r++) for (int col = 0; col < WordClock.COLS; col++) {
             boolean lightIt = on[r][col]; p.setColor(lightIt ? INK : 0xff2a2a2e); p.setTextAlign(Paint.Align.CENTER);
             if (lightIt) p.setShadowLayer(cell * .25f, 0, 0, 0x66ffffff);
-            c.drawText(WordClock.GRID[r].substring(col, col + 1), gx + cell * (col + .5f), gy + cell * (r + .5f) + base, p); p.setShadowLayer(0, 0, 0, 0);
+            c.drawText(WordClock.GRID[r].substring(col, col + 1), gx + cellX * (col + .5f), gy + cell * (r + .5f) + base, p); p.setShadowLayer(0, 0, 0, 0);
         }
-        int extra = Calendar.getInstance().get(Calendar.MINUTE) % 5; float gw0 = cell * WordClock.COLS, m = cell * .45f; p.setStyle(Paint.Style.FILL);
+        int extra = Calendar.getInstance().get(Calendar.MINUTE) % 5; float gw0 = cellX * WordClock.COLS, m = cell * .45f; p.setStyle(Paint.Style.FILL);
         for (int i = 0; i < 4; i++) { float dx = i == 0 || i == 3 ? gx - m : gx + gw0 + m, dy = i < 2 ? gy - m * .55f : gy + cell * WordClock.ROWS + m * .55f; if (i == 1 || i == 2) dx = gx + gw0 + m; if (i == 0 || i == 3) dx = gx - m; p.setColor(i < extra ? INK : 0xff2a2a2e); c.drawCircle(dx, dy, cell * .075f, p); }
         if (comp == 1) {
             float x = w * .60f; T(c, p, up(date("EEEE")), x, h * .24f, h * .085f, RED, Fonts.UI_SEMI, Paint.Align.LEFT, w * .3f);
@@ -251,7 +259,7 @@ final class NewFrames {
 
     // ───────────────────────────── ORBIT ─────────────────────────────
     private static void orbit(Canvas c, float w, float h, Context ctx, int comp) {
-        Paint p = paint(); boolean info = comp == 1; int accent = accent(ctx, Frames.ORBIT); float cx = info ? w * .27f : w / 2f, cy = h * .48f, k = info ? Math.min(h * .90f, w * .42f) : Math.min(h * .90f, w * .86f);
+        Paint p = paint(); boolean info = comp == 1; int accent = accent(ctx, Frames.ORBIT); float cx = info ? w * .27f : w / 2f, cy = h * .5f, k = info ? Math.min(h * .98f, w * .44f) : Math.min(h * .98f, w * .86f);
         Calendar now = Calendar.getInstance(); float ms = now.get(Calendar.MILLISECOND), sec = now.get(Calendar.SECOND), min = now.get(Calendar.MINUTE) + sec / 60f, hr = now.get(Calendar.HOUR) + min / 60f;
         float[] radius = {.20f * k, .315f * k, .43f * k}, frac = {hr / 12f, min / 60f, sec / 60f}; int[] col = {accent, 0xff0a84ff, 0xffd1d1d6}; if (accent == 0xff0a84ff) col[1] = 0xffff9f0a;
         float sw = k * .026f;
@@ -275,19 +283,19 @@ final class NewFrames {
         if (!Weather.hasPlace()) { T(c, p, "Sun path needs your location", w / 2f, h * .46f, h * .075f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .8f); T(c, p, "Allow location for Standby in Android settings", w / 2f, h * .57f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .8f); return; }
         long now = System.currentTimeMillis(); long[] s = Astro.sun(Weather.lat, Weather.lon, now); if (s == null) { T(c, p, Weather.lat > 0 == (Calendar.getInstance().get(Calendar.MONTH) >= 3 && Calendar.getInstance().get(Calendar.MONTH) <= 8) ? "Midnight sun" : "Polar night", w / 2f, h * .5f, h * .09f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .8f); return; }
         SimpleDateFormat f = new SimpleDateFormat(Prefs.is24(ctx) ? "HH:mm" : "h:mm a", Locale.getDefault());
-        float cx = w / 2f, base = h * .66f, rx = w * .33f, ry = h * .45f; float t = (now - s[0]) / (float) (s[1] - s[0]); boolean day = t >= 0 && t <= 1; float tc = Math.max(0f, Math.min(1f, t));
+        float cx = w / 2f, base = h * .74f, rx = w * .37f, ry = h * .56f; float t = (now - s[0]) / (float) (s[1] - s[0]); boolean day = t >= 0 && t <= 1; float tc = Math.max(0f, Math.min(1f, t));
         RectF oval = new RectF(cx - rx, base - ry, cx + rx, base + ry);
         p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(h * .007f); p.setColor(0xff2a2a2e); c.drawArc(oval, 180, 180, false, p);
         p.setStrokeWidth(h * .012f); p.setColor(0xffffb340); if (tc > 0) c.drawArc(oval, 180, 180f * tc, false, p);
-        p.setStrokeWidth(h * .004f); p.setColor(0xff3a3a3e); c.drawLine(w * .10f, base, w * .90f, base, p);
+        p.setStrokeWidth(h * .004f); p.setColor(0xff3a3a3e); c.drawLine(w * .07f, base, w * .93f, base, p);
         double a = Math.PI * tc; float sx = cx - (float) Math.cos(a) * rx, sy = base - (float) Math.sin(a) * ry;
         p.setStyle(Paint.Style.FILL);
         if (day) { p.setShader(new RadialGradient(sx, sy, h * .13f, 0x66ffb340, 0x00ffb340, Shader.TileMode.CLAMP)); c.drawCircle(sx, sy, h * .13f, p); p.setShader(null); p.setColor(0xffffc04d); c.drawCircle(sx, sy, h * .042f, p); }
         else { p.setColor(0xff48484d); c.drawCircle(t < 0 ? cx - rx : cx + rx, base, h * .028f, p); }
-        T(c, p, "SUNRISE", cx - rx, base + h * .075f, h * .035f, MUTED, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f); T(c, p, f.format(new Date(s[0])), cx - rx, base + h * .145f, h * .065f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f);
-        T(c, p, "SUNSET", cx + rx, base + h * .075f, h * .035f, MUTED, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f); T(c, p, f.format(new Date(s[1])), cx + rx, base + h * .145f, h * .065f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f);
-        if (comp == 1) NT(c, p, clock(ctx, false), cx, h * .58f, h * .15f, INK, Fonts.UI_MED, Paint.Align.CENTER, rx * 1.2f);
-        else { long left = day ? s[1] - now : now < s[0] ? s[0] - now : 0; String line = day ? "Sunset in " + span(left) : now < s[0] ? "Sunrise in " + span(left) : "The sun has set"; T(c, p, line, cx, h * .54f, h * .065f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, rx * 1.5f); T(c, p, span(s[1] - s[0]) + " of daylight", cx, h * .61f, h * .04f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, rx * 1.5f); }
+        T(c, p, "SUNRISE", cx - rx, base + h * .07f, h * .035f, MUTED, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f); T(c, p, f.format(new Date(s[0])), cx - rx, base + h * .15f, h * .07f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f);
+        T(c, p, "SUNSET", cx + rx, base + h * .07f, h * .035f, MUTED, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f); T(c, p, f.format(new Date(s[1])), cx + rx, base + h * .15f, h * .07f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .2f);
+        if (comp == 1) NT(c, p, clock(ctx, false), cx, h * .58f, h * .20f, INK, Fonts.UI_MED, Paint.Align.CENTER, rx * 1.2f);
+        else { long left = day ? s[1] - now : now < s[0] ? s[0] - now : 0; String line = day ? "Sunset in " + span(left) : now < s[0] ? "Sunrise in " + span(left) : "The sun has set"; T(c, p, line, cx, h * .55f, h * .08f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, rx * 1.5f); T(c, p, span(s[1] - s[0]) + " of daylight", cx, h * .645f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, rx * 1.5f); }
     }
     private static String span(long ms) { long m = Math.max(0, ms / 60000); return m >= 60 ? (m / 60) + " h " + (m % 60) + " min" : m + " min"; }
 
@@ -295,7 +303,7 @@ final class NewFrames {
     private static void moon(Canvas c, float w, float h, Context ctx, int comp) {
         Paint p = paint(); long now = System.currentTimeMillis(); double phase = Astro.moonPhase(now), lit = Astro.illumination(phase);
         Random rnd = new Random(11); p.setStyle(Paint.Style.FILL); for (int i = 0; i < 46; i++) { float x = rnd.nextFloat() * w, y = rnd.nextFloat() * h, s = h * (.002f + rnd.nextFloat() * .003f); p.setColor(alpha(0xffffffff, .10f + rnd.nextFloat() * .30f)); c.drawCircle(x, y, s, p); }
-        float cx = w * .27f, cy = h * .5f, r = h * .31f; moonDisc(c, p, cx, cy, r, (float) phase);
+        float cx = w * .26f, cy = h * .5f, r = h * .37f; moonDisc(c, p, cx, cy, r, (float) phase);
         float x = w * .54f;
         if (comp == 0) {
             T(c, p, Astro.phaseName(phase), x, h * .33f, h * .085f, INK, Fonts.UI_BOLD, Paint.Align.LEFT, w * .4f); T(c, p, Math.round(lit * 100) + "% illuminated", x, h * .45f, h * .05f, MUTED, Fonts.UI_MED, Paint.Align.LEFT, w * .4f);
@@ -405,13 +413,13 @@ final class NewFrames {
         float[] lens = comp == 0 ? new float[]{4, 7, 8} : new float[]{4, 4, 4, 4}; String[] names = comp == 0 ? new String[]{"Breathe in", "Hold", "Breathe out"} : new String[]{"Breathe in", "Hold", "Breathe out", "Hold"};
         float total = 0; for (float l : lens) total += l; float pos = (ms % (long) (total * 1000)) / 1000f; int phase = 0; float acc = 0; while (phase < lens.length - 1 && pos >= acc + lens[phase]) { acc += lens[phase]; phase++; }
         float local = (pos - acc) / lens[phase], eased = local * local * (3 - 2 * local); boolean boxOut = comp == 1 && phase == 3; float grow = phase == 0 ? eased : phase == 1 ? 1f : phase == 2 ? 1f - eased : 0f;
-        if (comp == 0 && phase == 1) grow = 1f; float rmin = h * .13f, rmax = h * .33f, r = rmin + (rmax - rmin) * grow, cx = w / 2f, cy = h * .47f;
+        if (comp == 0 && phase == 1) grow = 1f; float rmin = h * .12f, rmax = h * .29f, r = rmin + (rmax - rmin) * grow, cx = w / 2f, cy = h * .53f;
         p.setStyle(Paint.Style.FILL); p.setShader(new RadialGradient(cx, cy, r * 1.9f, alpha(accent, .26f), alpha(accent, 0f), Shader.TileMode.CLAMP)); c.drawCircle(cx, cy, r * 1.9f, p); p.setShader(null);
         p.setColor(alpha(accent, .16f)); c.drawCircle(cx, cy, r, p); p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(h * .012f); p.setColor(accent); c.drawCircle(cx, cy, r, p);
         p.setStrokeWidth(h * .005f); p.setColor(alpha(accent, .35f)); c.drawCircle(cx, cy, rmax * 1.0f, p); c.drawCircle(cx, cy, rmin, p);
         int remaining = (int) Math.ceil(lens[phase] * (1 - local)); T(c, p, Integer.toString(Math.max(1, remaining)), cx, cy, h * .14f, INK, Fonts.ROUNDED_BOLD, Paint.Align.CENTER, r * 1.2f);
-        T(c, p, names[phase], cx, h * .115f, h * .075f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .5f);
-        T(c, p, comp == 0 ? "4 - 7 - 8" : "Box breathing   4 - 4 - 4 - 4", cx, h * .86f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .6f); NT(c, p, clock(ctx, false), w * .07f, h * .115f, h * .06f, MUTED, Fonts.UI_SEMI, Paint.Align.LEFT, w * .2f);
+        T(c, p, names[phase], cx, h * .105f, h * .075f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .5f);
+        T(c, p, comp == 0 ? "4 - 7 - 8" : "Box breathing   4 - 4 - 4 - 4", cx, h * .925f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .6f); NT(c, p, clock(ctx, false), w * .07f, h * .115f, h * .06f, MUTED, Fonts.UI_SEMI, Paint.Align.LEFT, w * .2f);
         ring(c, p, ctx, w, h, false);
     }
 
@@ -429,8 +437,8 @@ final class NewFrames {
             String[][] rows = {{"time", date(Prefs.is24(ctx) ? "HH:mm:ss" : "hh:mm:ss a")}, {"date", date("EEE d MMM yyyy")}, {"battery", lv < 0 ? "n/a" : lv + "%" + (ch[0] ? "  charging" : "")}, {"alarm", a == null ? "none" : a},
                 {"weather", Weather.ready() ? Weather.shown(ctx, Weather.temp) + "°  " + Weather.describe(Weather.code) : "n/a"}, {"uptime", upS}};
             T(c, p, "standby@phone", x, h * .14f, h * .075f, accent, mono, Paint.Align.LEFT, w * .8f); p.setColor(dim); c.drawRect(x, h * .205f, x + w * .30f, h * .21f, p);
-            for (int i = 0; i < rows.length; i++) { float y = h * (.30f + .10f * i); T(c, p, rows[i][0], x, y, h * .06f, dim, monoReg, Paint.Align.LEFT, w * .2f); T(c, p, rows[i][1], x + w * .22f, y, h * .07f, accent, mono, Paint.Align.LEFT, w * .6f); }
-            T(c, p, pr + (cursor ? "█" : " "), x, h * .86f, h * .045f, dim, monoReg, Paint.Align.LEFT, w * .7f);
+            for (int i = 0; i < rows.length; i++) { float y = h * (.29f + .095f * i); T(c, p, rows[i][0], x, y, h * .06f, dim, monoReg, Paint.Align.LEFT, w * .2f); T(c, p, rows[i][1], x + w * .22f, y, h * .07f, accent, mono, Paint.Align.LEFT, w * .6f); }
+            T(c, p, pr + (cursor ? "█" : " "), x, h * .90f, h * .045f, dim, monoReg, Paint.Align.LEFT, w * .7f);
         }
         ring(c, p, ctx, w, h, false);
     }
@@ -464,10 +472,10 @@ final class NewFrames {
     private static long startedAt; private static int startedIdx = -1;
 
     private static void presets(Canvas c, Paint p, float w, float h, Context ctx, int accent, long now) {
-        tracked(c, p, "START A TIMER", w / 2f, h * .235f, h * .055f, accent, Fonts.UI_SEMI, Paint.Align.CENTER, .16f, w * .6f);
-        float cw = w * .195f, ch = h * .215f, gap = w * .02f, x0 = w / 2f - (4 * cw + 3 * gap) / 2f;
+        tracked(c, p, "START A TIMER", w / 2f, h * .19f, h * .055f, accent, Fonts.UI_SEMI, Paint.Align.CENTER, .16f, w * .6f);
+        float cw = w * .205f, ch = h * .27f, gap = w * .018f, x0 = w / 2f - (4 * cw + 3 * gap) / 2f;
         for (int i = 0; i < PRESETS.length; i++) {
-            float x = x0 + (i % 4) * (cw + gap), y = h * (i < 4 ? .30f : .56f); CHIPS[i].set(x, y, x + cw, y + ch);
+            float x = x0 + (i % 4) * (cw + gap), y = h * (i < 4 ? .27f : .58f); CHIPS[i].set(x, y, x + cw, y + ch);
             boolean hot = i == startedIdx && now - startedAt < 1800;
             p.setStyle(Paint.Style.FILL); p.setColor(hot ? accent : alpha(accent, .15f)); c.drawRoundRect(CHIPS[i], ch * .3f, ch * .3f, p);
             p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(h * .006f); p.setColor(alpha(accent, hot ? 1f : .45f)); c.drawRoundRect(CHIPS[i], ch * .3f, ch * .3f, p);
@@ -476,7 +484,7 @@ final class NewFrames {
             T(c, p, u, x + cw / 2f, y + ch * .80f, ch * .17f, hot ? 0xff000000 : MUTED, Fonts.UI_SEMI, Paint.Align.CENTER, cw * .8f);
         }
         NT(c, p, clock(ctx, false), w * .07f, h * .115f, h * .06f, MUTED, Fonts.UI_SEMI, Paint.Align.LEFT, w * .2f);
-        T(c, p, MediaListener.instance == null ? "Turn on notification access in the Standby app to watch it count down" : "Starts in the Clock app, so it rings as usual", w / 2f, h * .85f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .8f);
+        T(c, p, MediaListener.instance == null ? "Turn on notification access in the Standby app to watch it count down" : "Starts in the Clock app, so it rings as usual", w / 2f, h * .93f, h * .045f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .8f);
         ring(c, p, ctx, w, h, false);
     }
 

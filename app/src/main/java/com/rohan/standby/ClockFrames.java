@@ -69,17 +69,13 @@ final class ClockFrames {
         AlarmManager.AlarmClockInfo a = Prefs.digitalAlarm(ctx) ? alarm(ctx) : null;
         boolean column = Prefs.digitalDate(ctx) || (Prefs.digitalTemp(ctx) && Weather.ready()) || a != null;
         float x0 = w * .04f, colW = h * .56f, rx = w * .94f - colW, maxW = column ? rx - x0 - w * .03f : w * .92f;
-        // Reserve all four digits even at 1..9 o'clock. Width, scale and baseline depend
-        // only on the font/window, never the current minute's glyph advances.
-        t = TimeCells.padded(t);
         p.setTypeface(Fonts.CONDENSED); p.setTextSize(h); RectF b = Ink.bounds(p, "0");
-        float size = h * .90f * h / b.height(); p.setTextSize(size);
-        float full = TimeCells.width(inkCell(p)), sx = Math.min(1f, maxW / full);
-        if (sx < .66f) { size *= sx / .66f; p.setTextSize(size); full = TimeCells.width(inkCell(p)); sx = Math.min(1f, maxW / full); }
-        float drawX = column ? x0 : (w - full * sx) / 2f;
-        c.save(); c.translate(drawX, 0); c.scale(sx, 1f);
-        tabular(c, p, t, 0, h * .50f, size, accent, Fonts.CONDENSED, 0);
-        c.restore(); p.setTextScaleX(1f);
+        float size = h * .90f * h / b.height(); p.setTextSize(size); p.setTextScaleX(1f);
+        float sx = Math.min(1f, maxW / p.measureText(t));
+        if (sx < .66f) { size *= sx / .66f; p.setTextSize(size); sx = Math.min(1f, maxW / p.measureText(t)); }
+        p.setTextScaleX(sx); Ink.bounds(p, "0", b); RectF ink = Ink.bounds(p, t);
+        float drawX = column ? x0 - ink.left : (w - (ink.left + ink.right)) / 2f;
+        p.setColor(accent); p.setTextAlign(Paint.Align.LEFT); c.drawText(t, drawX, h * .50f - (b.top + b.bottom) / 2f, p); p.setTextScaleX(1f);
         float fs = h * .125f, ty = h * .155f; String dow = date("EEE").toUpperCase(Locale.getDefault());
         if (Prefs.digitalDate(ctx)) { float dowW = text(c, p, dow, rx, ty, fs, accent, Fonts.ROUNDED_BOLD, Paint.Align.LEFT, 0); text(c, p, date("d"), rx + dowW + fs * .22f, ty, fs, INK, Fonts.ROUNDED_BOLD, Paint.Align.LEFT, 0); }
         if (Prefs.digitalTemp(ctx) && Weather.ready()) text(c, p, Weather.shown(ctx, Weather.temp) + "°", rx, Prefs.digitalDate(ctx) ? h * .31f : h * .155f, fs, INK, Fonts.ROUNDED_BOLD, Paint.Align.LEFT, 0);
@@ -108,7 +104,7 @@ final class ClockFrames {
         // Fixed cells: every digit advances by the widest digit, so the overlapping glyphs never creep as the minutes change.
         float adv = cell(p) * f; float[] gx = new float[t.length()]; float x = 0, colonX = 0; p.setTextAlign(Paint.Align.CENTER);
         for (int i = 0; i < t.length(); i++) { gx[i] = x; if (t.charAt(i) == ':') { colonX = x + colon / 2; x += colon; } else x += adv; }
-        float shift = w / 2f - x / 2f; int di = 0;
+        float lead = t.startsWith(" ") ? adv : 0; float shift = w / 2f - (x + lead) / 2f; int di = 0;   // centre the visible digits, not the blank padding slot
         for (int i = 0; i < t.length(); i++) {
             if (t.charAt(i) == ':') continue;
             if (t.charAt(i) == ' ') { di++; continue; }
@@ -198,8 +194,12 @@ final class ClockFrames {
     static void batteryRing(Canvas c, Paint p, float x, float y, float r, float frac, boolean charging, float h) {
         p.setStyle(Paint.Style.STROKE); p.setStrokeWidth(r * .22f); p.setColor(0xff1f3a26); c.drawCircle(x, y, r, p);
         p.setColor(frac <= .2f && !charging ? RED : GREEN); c.drawArc(new RectF(x - r, y - r, x + r, y + r), -90, 360 * frac, false, p); p.setStyle(Paint.Style.FILL);
-        if (charging) { Path b = new Path(); b.moveTo(x + r * .12f, y - r * .50f); b.lineTo(x - r * .30f, y + r * .08f); b.lineTo(x - r * .02f, y + r * .08f); b.lineTo(x - r * .10f, y + r * .52f); b.lineTo(x + r * .32f, y - r * .10f); b.lineTo(x + r * .04f, y - r * .10f); b.close(); p.setColor(GREEN); c.drawPath(b, p); }
-        else text(c, p, Integer.toString(Math.round(frac * 100)), x, y, r * .62f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, r * 1.3f);
+        text(c, p, Integer.toString(Math.round(frac * 100)), x, y, r * .62f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, r * 1.3f);
+        if (charging) {   // the percentage stays; a small bolt sits in a notch at the top of the ring
+            float bx = x, by = y - r, s = .55f; p.setColor(0xff000000); c.drawCircle(bx, by, r * .34f, p);
+            Path b = new Path(); b.moveTo(bx + r * .12f * s, by - r * .50f * s); b.lineTo(bx - r * .30f * s, by + r * .08f * s); b.lineTo(bx - r * .02f * s, by + r * .08f * s); b.lineTo(bx - r * .10f * s, by + r * .52f * s); b.lineTo(bx + r * .32f * s, by - r * .10f * s); b.lineTo(bx + r * .04f * s, by - r * .10f * s); b.close();
+            p.setColor(GREEN); c.drawPath(b, p);
+        }
     }
     /** Month grid. Column centres run left..right; weekends are greyed, today is a red disc. */
     private static void grid(Canvas c, Paint p, Context ctx, float h, float left, float right, float headY, float row0, float rowH, float fs, boolean adjacent) {
@@ -243,14 +243,14 @@ final class ClockFrames {
         Paint p = paint(); String[] zones = Prefs.worldZones(ctx);
         if (zones.length == 0) { text(c, p, "No cities yet", w * .5f, h * .45f, h * .08f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, w * .8f); text(c, p, "Add some in Standby settings", w * .5f, h * .56f, h * .05f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, w * .8f); return; }
         chargeRing(c, p, ctx, w * .92f, h * .098f, h * .042f, h, false);
-        int n = zones.length; float cell = w * .90f / n, r = Math.min(cell * .40f, h * .25f); TimeZone local = TimeZone.getDefault(); long now = System.currentTimeMillis();
+        int n = zones.length; float cell = w * .92f / n, r = Math.min(cell * .42f, h * .29f); TimeZone local = TimeZone.getDefault(); long now = System.currentTimeMillis();
         for (int i = 0; i < n; i++) {
-            float cx = w * .05f + cell * (i + .5f); TimeZone tz = TimeZone.getTimeZone(zones[i]);
-            dial(c, p, cx, h * .41f, r, Prefs.worldSeconds(ctx), false, tz);
-            text(c, p, WorldCities.city(zones[i]), cx, h * .735f, h * .065f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, cell * .92f);
+            float cx = w * .04f + cell * (i + .5f); TimeZone tz = TimeZone.getTimeZone(zones[i]);
+            dial(c, p, cx, h * .43f, r, Prefs.worldSeconds(ctx), false, tz);
+            text(c, p, WorldCities.city(zones[i]), cx, h * .80f, h * .07f, INK, Fonts.UI_SEMI, Paint.Align.CENTER, cell * .92f);
             SimpleDateFormat f = new SimpleDateFormat(is24(ctx) ? "HH:mm" : "h:mm a", Locale.getDefault()); f.setTimeZone(tz); String clock = f.format(new Date(now));
-            text(c, p, clock, cx, h * .815f, h * .05f, INK, Fonts.UI_MED, Paint.Align.CENTER, cell * .92f);
-            text(c, p, WorldCities.relative(local, tz, now), cx, h * .885f, h * .038f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, cell * .94f);
+            text(c, p, clock, cx, h * .875f, h * .055f, INK, Fonts.UI_MED, Paint.Align.CENTER, cell * .92f);
+            text(c, p, WorldCities.relative(local, tz, now), cx, h * .94f, h * .04f, MUTED, Fonts.UI_MED, Paint.Align.CENTER, cell * .94f);
         }
     }
     static void drawCalendar(Canvas c, float w, float h) { drawCalendar(c, w, h, null); }
