@@ -161,3 +161,7 @@ For problems, include the frame/look, device model, Android version, activation 
 The repository was initialized from an existing uncommitted workspace on 7 November 2026. Initial import commits have explicitly reconstructed dates spanning 5–7 November 2026 at the owner's request; those dates do not establish implementation or test dates. Later iteration commits record subsequent changes.
 
 The banner and selected screenshots are tracked in [`docs/assets`](docs/assets). Other local capture sets, generated design explorations, SDK configuration, credentials, and signing keys are excluded from Git. Banner provenance and its generation prompt are recorded in [`docs/assets/README.md`](docs/assets/README.md).
+
+## Product website
+
+The Next.js site lives in [`website`](website). It features a photographic bedside scene, live browser-local clock faces, and an editorial field guide to all 23 frame families plus call previews. See the [website guide](website/README.md) for local startup, optional location/weather behavior, and implementation limits.

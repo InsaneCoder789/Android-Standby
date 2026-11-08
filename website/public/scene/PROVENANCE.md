@@ -1,0 +1,10 @@
+# Bedside hero scene
+
+Generated with the built-in imagegen tool on 7 November 2026. The photographic background is promotional artwork, not a photograph of the user's phone. Its blank screen is composited with live HTML/CSS clock faces. Source PNG remains at the imagegen output location; the project uses a quality-94 WebP copy.
+
+## Final prompt
+
++> Use case: product-mockup
+> Asset type: cinematic website hero background for an interactive Android bedside clock. Photorealistic product photography, landscape 16:9.
+> Primary request: An exquisitely detailed slim premium dark titanium Android smartphone held HORIZONTALLY on a sculptural brushed dark aluminum charging stand, on a walnut bedside table. Phone is the hero, centered in image, completely front-facing with perfectly horizontal screen edges and NO perspective rotation or tilt relative to camera: the display is a flat rectangle with rounded corners ready for an HTML overlay. Phone outer body spans approximately x=24% to76%, y=27% to69% of image; display ratio2.17:1, screen entirely pure uniform black, no reflections across screen, no UI, no text, no digits. Minimal uniform slim titanium bezel. Tiny front lens within left bezel. Stand stem descends from phone middle to table with a convincingly weighted low metal foot. Realistic precise engineering, impeccable materials and contact shadows.
+> Scene: sophisticated quiet bedroom at blue hour, rich walnut tabletop across bottom, soft olive linen curtain in left background, a softly out-of-focus warm amber bedside globe lamp at far right, muted charcoal wall. Sparse tasteful composition, no clutter, no humans. Warm practical lamp light gently grazing the phone metal rim with cool soft window fill, nuanced physically believable lighting, beautiful editorial photographic finish, rich atmospheric dark tones, understated luxury. Camera at the exact center height of the screen, long lens product photography, sharp phone, subtle background depth of field. Keep screen front-facing flat black and unobscured for later HTML compositing. No logos, no watermark, no text anywhere.

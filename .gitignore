@@ -13,3 +13,15 @@ keystore.properties
 *.keystore
 .env
 .env.*
+
+# Next.js product website
+website/node_modules/
+website/.next/
+website/out/
+website/*.tsbuildinfo
+website/output/
+.playwright-mcp/
+
+# Local deployment configuration and QA evidence
+.vercel/
+.qa/

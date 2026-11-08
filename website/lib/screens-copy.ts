@@ -1,0 +1,40 @@
+/** Words for the editorial "The screens" page. Facts follow the Android app; nothing here promises more than the web demos do. */
+export const copy: Record<number, string> = {
+  0: 'The one you glance at in the dark. Tall, tight numerals with the date and the temperature tucked beside them. Switch to Float for soft, overlapping digits that fade from lilac to magenta.',
+  1: 'One analog dial, worn three ways: on its own, beside the weather, or next to a month at a glance. Weekends step back; today is the only thing in red.',
+  2: 'The artwork sets the colour and your music gets the room. Title, artist, a seek bar that moves while it plays, and controls big enough to hit half asleep.',
+  3: 'The time on one side, the player on the other. Choose a dial or big digits; the music frame steps in by itself when something starts playing.',
+  4: 'Your own photographs, one at a time, with the clock laid over them if you want it. Several photos play as a quiet slideshow.',
+  5: 'Four clocks for four places you care about, with the offset spelled out underneath, so nobody has to do arithmetic at midnight.',
+  6: 'Mechanical cards without the clatter. Two heavy cards, a seam through the middle, and the digits turn over as the minute does.',
+  7: 'Time, spelled out. A grid of eleven letters by ten lights only the words it needs, rounding to the nearest five minutes.',
+  8: 'Glowing LED dots on a five-by-seven grid, the way a railway platform sign would do it. Unlit dots stay faintly visible behind the lit ones.',
+  9: 'Warm glass tubes with a lattice mesh. Four tubes for the time, six when you want the seconds as well.',
+  10: 'A seven-segment bedside clock. Ghost segments sit behind each digit, and it glows a night-safe red.',
+  11: 'A Swiss station clock: heavy bars, a red seconds hand, and nothing else to look at. Add the date when you want it.',
+  12: 'Hours, minutes and seconds each travel their own orbit around the time. A clock you can read without reading.',
+  13: 'An arc tracing how much of your local day has passed. This web interpretation shows day progress; it does not calculate sunrise or sunset.',
+  14: 'Tonight’s phase, drawn to scale, with how much of it is lit. A waning moon is lit on the left.',
+  15: 'How much of today, this week, this month and this year is already gone. As four bars, or as a year of dots, one for every day.',
+  16: 'A poster of today’s date. One enormous numeral, or a split between the weekday and the day. Calm, and impossible to misread.',
+  17: 'Temperature and sky, set large. It needs your location and shows nothing invented without it.',
+  18: 'Slow, drifting colour behind the time. Nothing moves faster than you can ignore.',
+  19: 'A paced breathing guide for winding down: four-seven-eight, or a steady box of four.',
+  20: 'For the curious. The date command in green on black, or a system status readout in the same voice.',
+  21: 'A sky that follows the hour: blue at noon, amber at dusk, deep violet after dark.',
+  22: 'Eight presets, one tap. In the app a preset starts the phone’s own clock timer, so it rings the way you expect.',
+  23: 'A preview of how the app makes room for a call: caller details, SIM and clear round controls. The identity and call state here are illustrative; these controls do not place or answer calls.',
+};
+export type Layout = 'feature' | 'half';
+export const chapters: { key: 'Clocks' | 'Everyday' | 'Atmosphere'; numeral: string; title: string; kicker: string; intro: string[]; order: [number, Layout][] }[] = [
+  { key: 'Clocks', numeral: '01', title: 'The clocks', kicker: 'Instruments',
+    intro: ['Every face begins as a clock, and a clock for a bedside is a particular kind of object. It is read in half a second, from across a dark room, by someone who would rather not be awake.', 'So these are built around contrast, scale and silence. Big numerals. One accent colour. Nothing that blinks without a reason.'],
+    order: [[0, 'feature'], [1, 'half'], [6, 'half'], [7, 'feature'], [8, 'half'], [9, 'half'], [10, 'half'], [11, 'half'], [12, 'half'], [20, 'half']] },
+  { key: 'Everyday', numeral: '02', title: 'The everyday', kicker: 'Quiet usefulness',
+    intro: ['Past the time itself, a few things are worth knowing at a glance: what is playing, where your friends are, how much of the day is left.', 'These faces carry just that much, in the same calm voice, and get out of the way when a call comes in.'],
+    order: [[2, 'feature'], [3, 'half'], [4, 'half'], [5, 'feature'], [15, 'half'], [16, 'half'], [17, 'half'], [22, 'half'], [23, 'feature']] },
+  { key: 'Atmosphere', numeral: '03', title: 'The atmosphere', kicker: 'The room, not the clock',
+    intro: ['The last group is less about reading and more about the room. Sky, moon, light and breath.', 'They tell the time too, if you ask them. Mostly they just keep you company.'],
+    order: [[13, 'feature'], [14, 'half'], [18, 'half'], [19, 'half'], [21, 'half']] },
+];
+export const pullQuotes = ['Nothing here is a screenshot. Every face is keeping your time.', 'A clock should be the quietest thing in the room, until you look at it.'];
