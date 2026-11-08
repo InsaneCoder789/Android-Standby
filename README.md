@@ -164,4 +164,6 @@ The banner and selected screenshots are tracked in [`docs/assets`](docs/assets).
 
 ## Product website
 
+**Live:** [android-standby.vercel.app](https://android-standby.vercel.app) · [Explore the screens](https://android-standby.vercel.app/screens)
+
 The Next.js site lives in [`website`](website). It features a photographic bedside scene, live browser-local clock faces, and an editorial field guide to all 23 frame families plus call previews. See the [website guide](website/README.md) for local startup, optional location/weather behavior, and implementation limits.

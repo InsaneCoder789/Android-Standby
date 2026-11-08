@@ -2,6 +2,8 @@
 
 A Next.js product site for the Android Standby screensaver, with a photographic bedside scene and live HTML/CSS clock faces.
 
+**Live:** [android-standby.vercel.app](https://android-standby.vercel.app) · [The screens](https://android-standby.vercel.app/screens) · [Setup guide](https://android-standby.vercel.app/guide)
+
 ## Run locally
 
 ```bash
@@ -10,7 +12,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3027. Build with `npm run build`; serve the production build with `npm start`. `npm run typecheck` checks TypeScript. Set `SITE_URL` to the eventual deployment origin for absolute social-image metadata. No deployment has been configured by this iteration.
+Open http://localhost:3027. Build with `npm run build`; serve the production build with `npm start`. `npm run typecheck` checks TypeScript. Vercel supplies the production origin for social-image metadata automatically; `SITE_URL` can override it for another host.
 
 ## Live collection
 
@@ -34,4 +36,14 @@ The displayed timezone region is not reverse-geocoded city detection. A chosen t
 - The install guide reflects the repository's source-build flow. There is no invented public APK or app-store destination.
 - Reduced-motion preferences disable decorative animation while the clock remains accurate.
 
-Production deployment, real-device browser coverage, and external weather-provider availability require separate verification.
+Real-device browser coverage, Safari/Firefox behavior, and external weather-provider availability beyond the checks below remain separate acceptance work.
+
+## Deployment
+
+Hosted on Vercel in the `android-standby` project under Rochiee’s projects. The GitHub connection builds `main` from the `website/` root directory, using `npm ci`, `npm run build`, the Next.js framework preset, and Node.js 22. Production is publicly accessible; preview deployments retain Vercel authentication. Only the website is built and hosted. The Android application is not deployed by Vercel.
+
+## Final review — 8 November 2026
+
+The production build and TypeScript checks passed. An independent Chromium pass exercised all 46 looks at desktop 1440×1000 and mobile 390×932, including fullscreen focus/return, timer and music-state continuity, numeric geometry at 09:59→10:00, coarse-pointer targets, direct mobile navigation at 320px, and optional weather denial/retry/timezone recovery. Identified clipping, modal, navigation, formatting and weather-expiry issues were repaired and retested. The production dependency audit reported zero known vulnerabilities at review time.
+
+Public production checks returned 200 for `/`, `/screens`, `/guide`, the hero image, fonts and icon; invalid weather coordinates returned 400; a live Open-Meteo request returned a validated Celsius forecast. A production browser journey confirmed navigation, timezone switching and fullscreen timer retention without observed console errors. Local detailed evidence is in the ignored project `.qa/runs/20261108T104613Z-website-final-vercel-9eae3b7c/` directory. This is scoped verification, not an exhaustive browser or accessibility guarantee.
