@@ -16,6 +16,15 @@ final class Instant {
     /** True when Android is told not to put Standby to sleep, which is what keeps the watcher alive on phones with aggressive battery managers. */
     static boolean unrestricted(Context c) { android.os.PowerManager pm = (android.os.PowerManager) c.getSystemService(Context.POWER_SERVICE); return pm != null && pm.isIgnoringBatteryOptimizations(c.getPackageName()); }
 
+    /**
+     * The hard rule: Standby exists only while the phone is plugged in (cable or wireless, including when full). Every way of opening Standby, every call/alarm
+     * wake-up and the call guard check this first, and a showing Standby re-checks it every second and closes itself the moment the charger is removed.
+     */
+    static boolean charging(Context c) {
+        try { android.content.Intent i = c.getApplicationContext().registerReceiver(null, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED)); return i != null && i.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0; }
+        catch (RuntimeException e) { return false; }
+    }
+
     static boolean overlayAllowed(Context c) { return Settings.canDrawOverlays(c); }
 
     /** Brings the watcher in line with the setting. Safe to call from anywhere; a refusal from the system (background start limits) is ignored. */

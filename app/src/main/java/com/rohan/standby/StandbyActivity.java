@@ -20,6 +20,7 @@ public class StandbyActivity extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state); Fonts.init(this);
+        if (!Instant.charging(this)) { closing = true; finish(); return; }   // hard rule: never open off the charger
         setShowWhenLocked(true); setTurnScreenOn(true);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         WindowManager.LayoutParams lp = getWindow().getAttributes(); lp.screenBrightness = Prefs.brightness(this);
@@ -31,7 +32,7 @@ public class StandbyActivity extends Activity {
         IntentFilter f = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED); f.addAction(Intent.ACTION_SCREEN_OFF); registerReceiver(receiver, f);
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE); if (nm != null) nm.cancel(LAUNCH_NOTIFICATION);
     }
-    @Override protected void onStart() { super.onStart(); Instant.showing = true; controller.start(); }
-    @Override protected void onStop() { if (!closing && !isFinishing() && Instant.showing) Instant.coveredAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); super.onStop(); }
-    @Override protected void onDestroy() { Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); if (receiver != null) unregisterReceiver(receiver); super.onDestroy(); }
+    @Override protected void onStart() { super.onStart(); if (controller == null) return; Instant.showing = true; controller.start(); }
+    @Override protected void onStop() { if (controller == null) { super.onStop(); return; } if (!closing && !isFinishing() && Instant.showing) Instant.coveredAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); super.onStop(); }
+    @Override protected void onDestroy() { if (controller == null) { super.onDestroy(); return; } Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); if (receiver != null) unregisterReceiver(receiver); super.onDestroy(); }
 }

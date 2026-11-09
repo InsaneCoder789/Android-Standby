@@ -38,6 +38,7 @@ public class MediaListener extends NotificationListenerService {
     /** A call or alarm is ringing: turn the screen on and bring Standby forward, so the frame is seen even when the display was off or Standby had been closed. */
     private void wakeForAlert(){
         try{
+            if(!Instant.charging(this))return;   // hard rule: off the charger Standby never wakes the screen or opens, whatever is ringing
             android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
             if(pm!=null&&checkSelfPermission(android.Manifest.permission.WAKE_LOCK)==android.content.pm.PackageManager.PERMISSION_GRANTED){
                 @SuppressWarnings("deprecation") android.os.PowerManager.WakeLock w=pm.newWakeLock(android.os.PowerManager.FULL_WAKE_LOCK|android.os.PowerManager.ACQUIRE_CAUSES_WAKEUP|android.os.PowerManager.ON_AFTER_RELEASE,"standby:alert");

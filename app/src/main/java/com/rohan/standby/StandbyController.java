@@ -19,6 +19,8 @@ final class StandbyController implements SensorEventListener {
     private final Context ctx; private final Window window; private final StandbyView view; private final Runnable close; private final long delayOverride; private final boolean activeAtOnce;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable scheduleCheck = new Runnable() { @Override public void run() { if (!Prefs.withinSchedule(ctx)) { close.run(); return; } handler.postDelayed(this, 30_000); } };
+    /** Hard rule: Standby only runs on the charger. Checked every second while showing, so unplugging closes it even if the broadcast was missed or a call screen was on top. */
+    private final Runnable powerCheck = new Runnable() { @Override public void run() { if (!Instant.charging(ctx)) { close.run(); return; } handler.postDelayed(this, 1_000); } };
     private float lastLux; private boolean leaving;
     private final Runnable leaveNight = new Runnable() { @Override public void run() { leaving = false; if (night && lastLux > nightLux * 1.6f + 2) { night = false; view.setNight(false); } } };
     private SensorManager sensors; private Sensor motion, light; private TiltGate gate; private boolean gated, autoNight, night, running; private float nightLux;
@@ -36,6 +38,8 @@ final class StandbyController implements SensorEventListener {
 
     void start() {
         if (running) return; running = true;
+        if (!Instant.charging(ctx)) { close.run(); return; } // not on the charger: never show
+        handler.postDelayed(powerCheck, 1_000);
         if (!Prefs.withinSchedule(ctx)) { close.run(); return; } // quiet hours: outside the window Standby stays out of the way
         if (Prefs.scheduleOn(ctx)) handler.postDelayed(scheduleCheck, 30_000);
         gated = Prefs.requireTilt(ctx) && motion != null; autoNight = Prefs.autoNight(ctx); nightLux = Prefs.nightLux(ctx);
@@ -44,7 +48,7 @@ final class StandbyController implements SensorEventListener {
         if (!gated || activeAtOnce) view.setActive(true);
         if (autoNight && light != null) sensors.registerListener(this, light, SensorManager.SENSOR_DELAY_NORMAL);
     }
-    void stop() { if (!running) return; running = false; handler.removeCallbacks(scheduleCheck); handler.removeCallbacks(leaveNight); leaving = false; sensors.unregisterListener(this); }
+    void stop() { if (!running) return; running = false; handler.removeCallbacks(scheduleCheck); handler.removeCallbacks(powerCheck); handler.removeCallbacks(leaveNight); leaving = false; sensors.unregisterListener(this); }
 
     @Override public void onSensorChanged(SensorEvent e) {
         if (!running) return;
