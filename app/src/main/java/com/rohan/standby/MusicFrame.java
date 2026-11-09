@@ -21,7 +21,7 @@ final class MusicFrame {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
     private final RectF art = new RectF(), previous = new RectF(), toggle = new RectF(), next = new RectF(), seek = new RectF(), seekTrack = new RectF();
     private Snap snap = new Snap(); private long lastPoll; private MediaController controller; private Bitmap colorsFor; private int topColor = NowBar.FALLBACK_TOP, bottomColor = NowBar.FALLBACK_BOTTOM;
-    private boolean seeking; private float seekFraction; private String appLabelFor, appLabel;
+    private boolean seeking; private float seekFraction; private String appLabelFor, appLabel; private boolean redesign;
 
     // ── session snapshot: binder calls are slow, so refresh a few times a second and extrapolate the position in between ──
     private void poll(Context ctx) {
@@ -52,6 +52,22 @@ final class MusicFrame {
     /** True while the wave is moving, so the view redraws at animation rate. */
     boolean animating(Context ctx) { return playing() && Prefs.musicWave(ctx) && android.animation.ValueAnimator.areAnimatorsEnabled() && Prefs.animate(ctx); }
 
+    /** Draws the redesign of the player: the same album-colour background, cover, wavy seek bar and controls, plus a label and the controls grouped on a glass pill. */
+    void drawRedesign(Canvas c, float w, float h, boolean night, Context ctx) { redesign = true; try { draw(c, w, h, night, ctx); } finally { redesign = false; } }
+    /** Clock and Music, redesigned: a bold 24-hour time on the left, the same player card on the right. */
+    void drawClockMusicRedesign(Canvas c, float w, float h, boolean night, Context ctx) {
+        poll(ctx); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND); paint.setStyle(Paint.Style.FILL); paint.setShader(null); int accent = 0xff64d2ff;
+        java.util.Date now = new java.util.Date(); ClockFrames.tabular(c, paint, new java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(now), w * .05f, h * .52f, h * .34f, 0xffffffff, Fonts.ROUNDED_BOLD, w * .42f);
+        paint.setLetterSpacing(.24f); ClockFrames.text(c, paint, new java.text.SimpleDateFormat("EEE d MMM", java.util.Locale.getDefault()).format(now).toUpperCase(java.util.Locale.getDefault()), w * .05f, h * .28f, h * .042f, accent, Fonts.UI_SEMI, Paint.Align.LEFT, w * .4f); paint.setLetterSpacing(0f);
+        card(c, new RectF(w * .50f, h * .16f, w * .955f, h * .90f), night, ctx);
+        float r = h * .05f; ClockFrames.chargeRing(c, paint, ctx, w * .93f - r * .45f, h * .095f, r * .8f, h, false); paint.setStyle(Paint.Style.FILL);
+    }
+    /** For the debug render tool only: pretend a track is playing, so the layout can be checked with real artwork. */
+    void debugPlay(String title, String artist, Bitmap art, long durationMs, long positionMs, boolean playing) {
+        Snap s = new Snap(); s.has = s.hasMeta = true; s.title = title; s.artist = artist; s.art = art; s.duration = durationMs; s.position = positionMs; s.stamp = SystemClock.elapsedRealtime(); s.speed = 1f; s.app = "Spotify";
+        s.state = playing ? PlaybackState.STATE_PLAYING : PlaybackState.STATE_PAUSED; s.actions = PlaybackState.ACTION_SEEK_TO | PlaybackState.ACTION_SKIP_TO_NEXT | PlaybackState.ACTION_SKIP_TO_PREVIOUS; snap = s; lastPoll = SystemClock.elapsedRealtime() + 60_000; colorsFor = art; recolor(art);
+    }
+
     // ───────────────────────────── full player ─────────────────────────────
     void draw(Canvas c, float w, float h, boolean night, Context ctx) {
         poll(ctx); paint.setStrokeCap(Paint.Cap.ROUND); paint.setStrokeJoin(Paint.Join.ROUND); paint.setStyle(Paint.Style.FILL); boolean idle = !snap.has || snap.title == null && snap.state == PlaybackState.STATE_NONE;
@@ -75,6 +91,7 @@ final class MusicFrame {
             ClockFrames.text(c, paint, "Start music on your phone and it shows up here", left, h * .53f, h * .045f, 0xb3ffffff, Fonts.UI_MED, Paint.Align.LEFT, panelW);
             toggle.setEmpty(); previous.setEmpty(); next.setEmpty(); seek.setEmpty(); return;
         }
+        if (redesign) { paint.setLetterSpacing(.24f); ClockFrames.text(c, paint, playing() ? "NOW PLAYING" : "PAUSED", left, h * .15f, h * .036f, 0xe6ffffff, Fonts.UI_SEMI, Paint.Align.LEFT, panelW); paint.setLetterSpacing(0f); }
         // Two fixed title lines keep long metadata readable without moving the timeline or buttons.
         title(c, snap.title == null ? "Unknown track" : snap.title, left, panelW, h);
         paint.setTypeface(Fonts.UI_MED); paint.setTextSize(h * .045f); String artist = TextUtils.ellipsize(snap.artist == null ? "" : snap.artist, new TextPaint(paint), panelW, TextUtils.TruncateAt.END).toString();
@@ -92,6 +109,7 @@ final class MusicFrame {
         // Controls: prev, play/pause (larger), next.
         float cy = h * .810f, cx = (left + right) / 2f, step = Math.min(panelW * .27f, h * .24f), big = h * .078f, small = h * .062f;
         toggle.set(cx - big, cy - big, cx + big, cy + big); previous.set(cx - step - small, cy - small, cx - step + small, cy + small); next.set(cx + step - small, cy - small, cx + step + small, cy + small);
+        if (redesign) { paint.setStyle(Paint.Style.FILL); paint.setColor(0x2effffff); float pw = step + small + h * .035f, ph = big + h * .02f; c.drawRoundRect(cx - pw, cy - ph, cx + pw, cy + ph, ph, ph, paint); }
         paint.setStyle(Paint.Style.FILL); paint.setColor(0xefffffff); c.drawCircle(cx, cy, big, paint); paint.setColor(0xff24202a);
         if (playing()) pauseGlyph(c, cx, cy, h * .044f); else playGlyph(c, cx + h * .004f, cy, h * .046f);
         paint.setColor(0xffffffff); skipGlyph(c, previous.centerX(), cy, h * .036f, true); skipGlyph(c, next.centerX(), cy, h * .036f, false);

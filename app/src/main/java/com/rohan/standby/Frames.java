@@ -19,7 +19,10 @@ final class Frames {
         "Seven segment bedside clock", "Swiss station clock", "Hours, minutes and seconds on orbits", "Sunrise and sunset along the day's arc", "Tonight's phase", "How much of the day, week, month and year is gone",
         "A poster of today's date", "Temperature and sky", "Slow drifting colour", "A paced breathing guide for winding down", "Green on black, for the curious", "A sky that follows the hour", "Quick timers, and the running one live"};
     /** How many components each frame has (swipe up or down to move through them). */
-    static final int[] COMPONENTS = {2, 3, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+    /** The looks each frame had before the redesign. The redesign is one extra look after these, so every existing look stays exactly as it was. */
+    static final int[] BASE = {2, 3, 1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2};
+    static final int[] COMPONENTS = new int[COUNT];
+    static { for (int i = 0; i < COUNT; i++) COMPONENTS[i] = BASE[i] + 1; }
     /** Which frames use the full-bleed animation rate rather than once a second. */
     static boolean animated(int frame, int comp) { return frame == BREATHE || frame == AURORA; }
     /** Frames that show the Now Bar player (and so take part in the music touch handling). */

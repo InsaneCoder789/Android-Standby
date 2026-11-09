@@ -146,6 +146,8 @@ public final class StandbyView extends View {
         if (!active) { postInvalidateDelayed(1000); return; }
         StatusBarNotification alert = !previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
         if (alert != null) { callFrame.draw(c, w, h, alert); postInvalidateDelayed(callFrame.animated() ? 33 : 500); return; }
+        MediaListener.Missed missed = !previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.missed() : null;
+        if (missed != null) { callFrame.drawMissed(c, w, h, missed); postInvalidateDelayed(500); return; }
         int layer = -1; if (filter != null) { layerPaint.setColorFilter(filter); layer = c.saveLayer(0, 0, w, h, layerPaint); }
         int shift = c.save();
         if (burnInOverride != null) c.translate(burnInOverride[0] * w, burnInOverride[1] * h); else if (!previewMode && Prefs.burnInShift(ctx)) { float[] o = BurnIn.offset(System.currentTimeMillis() / 60000, w, h); c.translate(o[0], o[1]); }
@@ -174,6 +176,7 @@ public final class StandbyView extends View {
         }
     }
     private void drawFrame(Canvas c, float w, float h, int f, int k, Context ctx) {
+        if (k == Frames.BASE[f]) { if (f == Frames.PHOTOS) { drawPhoto(c, w, h); if (photo != null) ConceptFrames.photoPill(c, w, h, ctx); } else if (f == Frames.MUSIC) musicFrame.drawRedesign(c, w, h, night, ctx); else if (f == Frames.CLOCK_MUSIC) musicFrame.drawClockMusicRedesign(c, w, h, night, ctx); else ConceptFrames.draw(c, w, h, ctx, f); return; }
         switch (f) {
             case Frames.DIGITAL: if (k == 0) ClockFrames.drawDigital(c, w, h, ctx); else ClockFrames.drawColour(c, w, h, ctx); break;
             case Frames.DIAL: if (k == 0) ClockFrames.drawAnalog(c, w, h, ctx); else if (k == 1) ClockFrames.drawWidgets(c, w, h, ctx); else ClockFrames.drawCalendar(c, w, h, ctx); break;
@@ -271,7 +274,8 @@ public final class StandbyView extends View {
     @Override public boolean onTouchEvent(MotionEvent e) {
         if (!active) return true; Context ctx = getContext(); float[] pt = logical(e.getX(), e.getY()); final float ex = pt[0], ey = pt[1], lw = pt[2], lh = pt[3], slop = lh * .03f;
         StatusBarNotification alert = !previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null ? MediaListener.instance.alert() : null;
-        if (alert != null) { if (e.getAction() == MotionEvent.ACTION_UP) callFrame.touch(ex, ey, alert); return true; }
+        if (alert != null) { callFrame.onTouch(e.getAction(), ex, ey, alert); invalidate(); return true; }
+        if (!previewMode && Prefs.showAlerts(ctx) && MediaListener.instance != null && MediaListener.instance.missed() != null) { if (e.getAction() == MotionEvent.ACTION_UP) callFrame.touchMissed(ex, ey); return true; }
         switch (e.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 finishSettle(); downX = ex; downY = ey; sliderDrag = false; moved = false; longPressed = false; ignoreDrag = false; removeCallbacks(longPress);

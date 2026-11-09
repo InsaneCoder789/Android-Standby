@@ -16,11 +16,11 @@ public class FramesTest {
     @Test public void wrapHasNoEnd() { assertEquals(0, Frames.wrap(3, 3)); assertEquals(2, Frames.wrap(-1, 3)); assertEquals(1, Frames.wrap(-5, 3)); assertEquals(0, Frames.wrap(7, 0)); }
     @Test public void catalogueIsConsistent() {
         assertEquals(Frames.COUNT, Frames.NAMES.length); assertEquals(Frames.COUNT, Frames.INFO.length); assertEquals(Frames.COUNT, Frames.COMPONENTS.length);
-        for (int c : Frames.COMPONENTS) assertTrue(c >= 1 && c <= 3);
+        for (int i = 0; i < Frames.COUNT; i++) { assertTrue(Frames.BASE[i] >= 1 && Frames.BASE[i] <= 3); assertEquals("each frame has its old looks plus one redesign", Frames.BASE[i] + 1, Frames.COMPONENTS[i]); }
         assertTrue("at least fifteen frames beyond the original six", Frames.COUNT - 6 >= 15);
         java.util.HashSet<String> seen = new java.util.HashSet<>(); for (String n : Frames.NAMES) assertTrue(n, seen.add(n));
     }
-    @Test public void sharedDialIsOneFrameWithThreeLooks() { assertEquals(3, Frames.COMPONENTS[Frames.DIAL]); assertEquals(2, Frames.COMPONENTS[Frames.DIGITAL]); }
+    @Test public void sharedDialIsOneFrameWithThreeLooks() { assertEquals(3, Frames.BASE[Frames.DIAL]); assertEquals(2, Frames.BASE[Frames.DIGITAL]); }
     @Test public void legacyFacesMapOntoFramesAndComponents() {
         int[][] want = {{0, 0}, {0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {4, 0}, {5, 0}};
         for (int i = 0; i < 8; i++) { int[] got = Frames.fromLegacy(i); assertArrayEquals("legacy " + i, want[i], got); assertTrue(got[1] < Frames.COMPONENTS[got[0]]); }

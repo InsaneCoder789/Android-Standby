@@ -59,7 +59,7 @@ public class SettingsActivity extends Activity {
     @Override protected void onResume() { super.onResume(); Instant.sync(this); for (Runnable r : refreshers) r.run(); if (preview != null) preview.reload(); if (stack.peek() != null && stack.peek().equals("tilt")) startTilt(); }
     @Override protected void onPause() { stopTilt(); super.onPause(); }
     @Override public void onBackPressed() { if (stack.size() > 1) { stack.pop(); render(stack.peek()); } else super.onBackPressed(); }
-    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) { super.onRequestPermissionsResult(code, perms, results); Weather.refresh(this); for (Runnable r : refreshers) r.run(); if (preview != null) preview.reload(); }
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] results) { super.onRequestPermissionsResult(code, perms, results); Weather.refresh(this); for (Runnable r : refreshers) r.run(); if (preview != null) preview.reload(); if (code == 7) grantAll(); }
     @Override protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (request == REQ_PHOTOS && result == RESULT_OK && data != null) {
@@ -96,10 +96,12 @@ public class SettingsActivity extends Activity {
         section("SET UP");
         TextView s1 = nav("Screensaver", "Choose Standby there. Turn Low light mode off, or Android shows its own clock in the dark.", v -> startActivity(new Intent(Settings.ACTION_DREAM_SETTINGS)));
         TextView s2 = nav("Music and calls", "Now-playing controls and incoming calls", v -> startActivity(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")));
+        TextView s4 = nav("Keep Standby ready", "Lets it start by itself, even after the phone has been idle. Also set Battery to never sleep this app.", v -> { try { startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName()))); } catch (RuntimeException e) { startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); } });
+        TextView s5 = nav("Standby call screen", "Keeps Standby's call frame in front when the phone app opens its own call screen. Turn on Standby under Installed apps.", v -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         TextView s3 = nav("Weather", "Uses your approximate location", v -> { if (checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED || !shouldShowRequestPermissionRationale(android.Manifest.permission.ACCESS_COARSE_LOCATION) && Prefs.b(this, "askedLocation", false)) startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getPackageName()))); else { Prefs.sp(this).edit().putBoolean("askedLocation", true).apply(); requestPermissions(new String[]{android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQ_LOCATION); } });
         refreshers.add(() -> {
             String dream = Settings.Secure.getString(getContentResolver(), "screensaver_components"), l = Settings.Secure.getString(getContentResolver(), "enabled_notification_listeners");
-            status(s1, dream != null && dream.contains(getPackageName())); status(s2, l != null && l.contains(getPackageName())); status(s3, checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+            status(s1, dream != null && dream.contains(getPackageName())); status(s2, l != null && l.contains(getPackageName())); status(s3, checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED); status(s4, Instant.unrestricted(this)); String acc = Settings.Secure.getString(getContentResolver(), "enabled_accessibility_services"); status(s5, acc != null && acc.contains(getPackageName() + "/"));
         });
         section("CUSTOMISE");
         nav("Display and night", "Brightness, night mode, burn-in protection", v -> go("display"));
@@ -199,6 +201,7 @@ public class SettingsActivity extends Activity {
         }
     }
     private String lookName(int frame,int look){
+        if(look>=Frames.BASE[frame])return "Redesign";
         if(frame==Frames.DIGITAL)return look==0?"Digital":"Float";
         if(frame==Frames.DIAL)return new String[]{"Analog","Widgets","Calendar"}[look];
         if(frame==Frames.CLOCK_MUSIC)return look==0?"Analog and player":"Digital and player";
@@ -278,6 +281,7 @@ public class SettingsActivity extends Activity {
     private void display() {
         header("Display and night", "How the screen looks in the dark", true); previewCard(-1);
         section("BRIGHTNESS"); slider("Screen brightness", "brightness", 1, 100, 12, "%");
+        section("ALARM AND TIMER"); choice("Alarm look", "alarmTheme", new String[]{"Auto", "Morning", "Sunset", "Evening", "Night", "Midnight"}, 0);
         section("NIGHT MODE"); toggle("Automatic night mode", "Uses the light sensor", "autoNight", true); choice("Switches on when", "nightLux", new String[]{"Very dark", "Dark", "Dim"}, 1); choice("Night style", "nightStyle", new String[]{"Red", "Dim", "Off"}, 0);
         LinearLayout r = row(); r.addView(label("Preview night mode", 17, Fonts.UI_SEMI, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f)); Switch sw = new Switch(this); r.addView(sw); add(r);
         sw.setOnCheckedChangeListener((b, on) -> { if (preview != null) preview.setNight(on); });
@@ -285,10 +289,23 @@ public class SettingsActivity extends Activity {
         section("BEHAVIOUR"); toggle("Animations", "Slides between frames and looks", "animate", true); toggle("Calls and alarms", "Take over the screen when they ring", "alerts", true);
     }
 
+    /** Asks for every runtime permission at once, then walks through the special switches Android only lets the user flip: overlay, full-screen alerts and battery. Safe to tap again; it goes to the next missing one. */
+    private void grantAll() {
+        java.util.ArrayList<String> need = new java.util.ArrayList<>();
+        for (String p : new String[]{"android.permission.POST_NOTIFICATIONS", "android.permission.READ_PHONE_STATE", "android.permission.ANSWER_PHONE_CALLS", "android.permission.READ_CONTACTS", "android.permission.READ_CALL_LOG", "android.permission.READ_PHONE_NUMBERS", "android.permission.BLUETOOTH_CONNECT", "android.permission.ACCESS_COARSE_LOCATION"})
+            if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) need.add(p);
+        if (!need.isEmpty()) { requestPermissions(need.toArray(new String[0]), 7); return; }
+        if (!Instant.overlayAllowed(this)) { startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName()))); return; }
+        if (android.os.Build.VERSION.SDK_INT >= 34 && !((android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE)).canUseFullScreenIntent()) { startActivity(new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, android.net.Uri.parse("package:" + getPackageName()))); return; }
+        if (!Instant.unrestricted(this)) { startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, android.net.Uri.parse("package:" + getPackageName()))); return; }
+        android.widget.Toast.makeText(this, "Every permission is on. Notification access and the call-screen accessibility switch are under their own rows.", android.widget.Toast.LENGTH_LONG).show();
+    }
+
     private void activation() {
         header("Activation", "When Standby starts", true);
         section("INSTANT MODE");
         toggle("Open instantly", "Opens by itself the moment the phone is charging at the landscape angle, even from the always-on display", "instantMode", true);
+        nav("Grant all permissions", "One tap: asks for notifications, phone, contacts, call log and location, then opens each special switch Android keeps for itself (overlay, full-screen alerts, battery)", v -> grantAll());
         TextView overlay = nav("Display over other apps", "The one permission Instant mode needs, so Standby can open over your lock screen", v -> startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:" + getPackageName()))));
         refreshers.add(() -> status(overlay, Instant.overlayAllowed(this)));
         TextView notify = nav("Notifications", "Lets Android show the small “Standby is ready” notice that keeps Instant mode running", v -> { if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED && shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFY); else startActivity(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())); });
