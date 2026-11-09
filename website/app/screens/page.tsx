@@ -2,5 +2,13 @@ import type { Metadata } from 'next';
 import '@/components/screens.css';
 import { Header, Footer } from '@/components/experience';
 import ScreensEditorial from '@/components/screens-editorial';
-export const metadata: Metadata = { title: 'The screens — Android Standby', description: 'A field guide to every face Android Standby can wear: clocks, everyday information and atmosphere, each one live.', openGraph: { title: 'The screens — Android Standby', description: 'Every face, live.', images: [{ url: '/frames/float.webp', width: 1800, height: 831 }] } };
-export default function Screens() { return <><Header /><ScreensEditorial /><Footer /></>; }
+import { Breadcrumbs } from '@/components/json-ld';
+import { pageMeta } from '@/lib/site';
+export const metadata: Metadata = pageMeta({
+  title: 'Every Standby clock face for Android',
+  shareTitle: 'Every Standby clock face for Android — Android Standby',
+  description: 'Browse every Android Standby screen: digital, analog, flip, nixie and word clocks, music, weather, photos, sun, moon and aurora faces. Each preview is live.',
+  shareDescription: 'Every Android Standby face, live: clocks, everyday information and atmosphere.',
+  path: '/screens',
+});
+export default function Screens() { return <><Breadcrumbs items={[{name:'Android Standby',path:'/'},{name:'The screens',path:'/screens'}]} /><Header /><ScreensEditorial /><Footer /></>; }

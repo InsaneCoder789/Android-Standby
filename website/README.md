@@ -38,6 +38,26 @@ The displayed timezone region is not reverse-geocoded city detection. A chosen t
 
 Real-device browser coverage, Safari/Firefox behavior, and external weather-provider availability beyond the checks below remain separate acceptance work.
 
+## Search and sharing (SEO)
+
+Everything that search engines and link previews read is generated from one place, `lib/site.ts` (name, title, description, keywords, canonical URL).
+
+| What | Where |
+| --- | --- |
+| Title, description, keywords, canonical, robots, Open Graph, Twitter card | `app/layout.tsx` and each page's `metadata` |
+| Structured data (WebSite, SoftwareApplication, FAQPage, BreadcrumbList) | `components/json-ld.tsx` |
+| Social banner, 1200x630, 120 KB (`/og-banner.jpg`, used by every page's Open Graph and Twitter tags) | `public/og-banner.jpg`, composed from `public/scene/bedside.webp` with a captured `public/frames/float.webp` clock on its screen and Barlow Condensed text |
+| `sitemap.xml`, `robots.txt`, web manifest, icons | `app/sitemap.ts`, `app/robots.ts`, `app/manifest.ts`, `app/icon.tsx`, `app/apple-icon.tsx` |
+| FAQ text (shown on the page and in the FAQ structured data) | `lib/faqs.ts` |
+
+Environment variables (all optional, set them in Vercel):
+
+- `SITE_URL`: the canonical origin, for example a custom domain. Defaults to the Vercel production URL.
+- `GOOGLE_SITE_VERIFICATION`: the token from Google Search Console's HTML tag method.
+- `BING_SITE_VERIFICATION`: the token from Bing Webmaster Tools.
+
+After deploying: verify the site in Google Search Console, submit `/sitemap.xml`, and request indexing for `/`, `/screens` and `/guide`. Check a share with the Facebook Sharing Debugger or LinkedIn Post Inspector, and the structured data with Google's Rich Results Test.
+
 ## Deployment
 
 Hosted on Vercel in the `android-standby` project under Rochiee’s projects. The GitHub connection builds `main` from the `website/` root directory, using `npm ci`, `npm run build`, the Next.js framework preset, and Node.js 22. Production is publicly accessible; preview deployments retain Vercel authentication. Only the website is built and hosted. The Android application is not deployed by Vercel.
