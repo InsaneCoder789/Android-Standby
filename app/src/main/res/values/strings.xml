@@ -1,1 +1,1 @@
-<resources><string name="app_name">Standby</string><string name="dream_description">Bedside screensaver</string></resources>
+<resources><string name="app_name">Standby</string><string name="dream_description">Bedside screensaver</string><string name="guard_description">While Standby is on screen, keeps its call screen in front when the phone app opens its own. It only notices that the phone app opened; it reads nothing from the screen.</string><string name="guard_label">Standby call screen</string></resources>

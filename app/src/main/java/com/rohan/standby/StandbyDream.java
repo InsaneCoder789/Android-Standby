@@ -18,7 +18,7 @@ public class StandbyDream extends DreamService {
         display = new StandbyView(this); setContentView(display);
         controller = new StandbyController(this, getWindow(), display, this::finish, -1, false);
     }
-    @Override public void onDreamingStarted() { super.onDreamingStarted(); if (controller != null) controller.start(); }
-    @Override public void onDreamingStopped() { if (controller != null) controller.stop(); super.onDreamingStopped(); }
+    @Override public void onDreamingStarted() { super.onDreamingStarted(); Instant.showing = true; if (controller != null) controller.start(); }
+    @Override public void onDreamingStopped() { if (Instant.showing) Instant.coveredAt = android.os.SystemClock.elapsedRealtime(); Instant.showing = false; if (controller != null) controller.stop(); super.onDreamingStopped(); }
     @Override public void onDetachedFromWindow() { if (controller != null) controller.stop(); super.onDetachedFromWindow(); }
 }

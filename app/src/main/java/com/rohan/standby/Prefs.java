@@ -38,6 +38,8 @@ final class Prefs {
     static boolean autoNight(Context c) { return b(c, "autoNight", true); }
     static float nightLux(Context c) { int v = clamp(i(c, "nightLux", 1), 0, 2); return v == 0 ? 3f : v == 1 ? 8f : 20f; }
     /** 0 red, 1 dim, 2 off */
+    /** 0 = follows the time of day; 1..5 = Morning, Sunset, Evening, Night, Midnight. */
+    static int alarmTheme(Context c) { return clamp(i(c, "alarmTheme", 0), 0, 5); }
     static int nightStyle(Context c) { return clamp(i(c, "nightStyle", 0), 0, 2); }
     static boolean burnInShift(Context c) { return b(c, "burnIn", true); }
     static boolean showPicker(Context c) { return b(c, "showPicker", true); }

@@ -16,7 +16,7 @@ import android.view.WindowManager;
  */
 public class StandbyActivity extends Activity {
     static final int LAUNCH_NOTIFICATION = 72;
-    private StandbyView view; private StandbyController controller; private BroadcastReceiver receiver;
+    private boolean closing; private StandbyView view; private StandbyController controller; private BroadcastReceiver receiver;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state); Fonts.init(this);
@@ -26,12 +26,12 @@ public class StandbyActivity extends Activity {
         lp.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= 30 ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES; getWindow().setAttributes(lp);
         getWindow().getDecorView().setSystemUiVisibility(5894 | 1024 | 512);
         view = new StandbyView(this); setContentView(view);
-        controller = new StandbyController(this, getWindow(), view, this::finish, 0, true);
-        receiver = new BroadcastReceiver() { @Override public void onReceive(Context c, Intent i) { Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); } };
+        controller = new StandbyController(this, getWindow(), view, () -> { closing = true; finish(); }, 0, true);
+        receiver = new BroadcastReceiver() { @Override public void onReceive(Context c, Intent i) { closing = true; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); } };
         IntentFilter f = new IntentFilter(Intent.ACTION_POWER_DISCONNECTED); f.addAction(Intent.ACTION_SCREEN_OFF); registerReceiver(receiver, f);
         NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE); if (nm != null) nm.cancel(LAUNCH_NOTIFICATION);
     }
     @Override protected void onStart() { super.onStart(); Instant.showing = true; controller.start(); }
-    @Override protected void onStop() { controller.stop(); Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); super.onStop(); }
+    @Override protected void onStop() { if (!closing && !isFinishing() && Instant.showing) Instant.coveredAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); finish(); super.onStop(); }
     @Override protected void onDestroy() { Instant.showing = false; Instant.closedAt = android.os.SystemClock.elapsedRealtime(); controller.stop(); if (receiver != null) unregisterReceiver(receiver); super.onDestroy(); }
 }
