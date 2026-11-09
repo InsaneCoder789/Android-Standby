@@ -178,7 +178,7 @@ final class CallFrame {
     private static boolean isBt(AudioDeviceInfo d){int t=d.getType();return t==AudioDeviceInfo.TYPE_BLUETOOTH_SCO||t==AudioDeviceInfo.TYPE_BLUETOOTH_A2DP||t==AudioDeviceInfo.TYPE_HEARING_AID||(android.os.Build.VERSION.SDK_INT>=31&&t==AudioDeviceInfo.TYPE_BLE_HEADSET);}
     void readAudio(Call k){
         try{AudioManager am=audio();if(am==null)return;k.muted=am.isMicrophoneMute();
-            if(android.os.Build.VERSION.SDK_INT>=31){AudioDeviceInfo d=am.getCommunicationDevice();k.speaker=d!=null&&d.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;k.bluetooth=d!=null&&isBt(d);if(k.bluetooth&&d.getProductName()!=null)k.btName=d.getProductName().toString();}
+            if(android.os.Build.VERSION.SDK_INT>=31){AudioDeviceInfo d=am.getCommunicationDevice();k.speaker=(d!=null&&d.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER)||(d==null&&am.isSpeakerphoneOn());k.bluetooth=d!=null&&isBt(d);if(k.bluetooth&&d.getProductName()!=null)k.btName=d.getProductName().toString();}
             else{k.speaker=am.isSpeakerphoneOn();k.bluetooth=am.isBluetoothScoOn();}
             for(AudioDeviceInfo d:am.getDevices(AudioManager.GET_DEVICES_OUTPUTS))if(isBt(d)){k.btAvailable=true;if(k.btName==null&&k.bluetooth&&d.getProductName()!=null)k.btName=d.getProductName().toString();}
             if(k.bluetooth)k.btAvailable=true;
@@ -189,8 +189,9 @@ final class CallFrame {
             if(kind==MUTE){am.setMicrophoneMute(!am.isMicrophoneMute());return;}
             if(android.os.Build.VERSION.SDK_INT>=31){
                 AudioDeviceInfo cur=am.getCommunicationDevice();boolean on=cur!=null&&(kind==SPEAKER?cur.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:isBt(cur));
-                if(on){am.clearCommunicationDevice();return;}
-                for(AudioDeviceInfo d:am.getAvailableCommunicationDevices())if(kind==SPEAKER?d.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:isBt(d)){am.setCommunicationDevice(d);return;}
+                if(on){am.clearCommunicationDevice();if(kind==SPEAKER)am.setSpeakerphoneOn(false);return;}
+                for(AudioDeviceInfo d:am.getAvailableCommunicationDevices())if(kind==SPEAKER?d.getType()==AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:isBt(d)){if(am.setCommunicationDevice(d))return;break;}
+                if(kind==SPEAKER){am.setSpeakerphoneOn(!am.isSpeakerphoneOn());return;}   // the phone app set speaker the old way, or refused the new way: use the old switch
             }else if(kind==SPEAKER)am.setSpeakerphoneOn(!am.isSpeakerphoneOn());
             else{if(am.isBluetoothScoOn()){am.stopBluetoothSco();am.setBluetoothScoOn(false);}else{am.startBluetoothSco();am.setBluetoothScoOn(true);}}
         }catch(RuntimeException ignored){}
@@ -199,7 +200,9 @@ final class CallFrame {
     private void tryAudio(int kind){
         final Call before=new Call();readAudio(before);toggleAudio(kind);final PendingIntent open=openIntent;
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(()->{Call after=new Call();readAudio(after);
-            if(before.speaker==after.speaker&&before.bluetooth==after.bluetooth&&before.muted==after.muted&&open!=null)try{open.send();}catch(PendingIntent.CanceledException ignored){}},500);
+            if(before.speaker==after.speaker&&before.bluetooth==after.bluetooth&&before.muted==after.muted&&open!=null){
+                try{open.send();}catch(PendingIntent.CanceledException ignored){}
+                if(kind==SPEAKER)CallGuardService.tapAudio("Speaker");else if(kind==BLUETOOTH)CallGuardService.tapAudio("Bluetooth");}},500);
     }
     // ───────── icons, drawn on the canvas ─────────
     private void silhouette(Canvas c,float x,float y,float r){

@@ -4,5 +4,6 @@
     android:packageNames="com.samsung.android.incallui,com.android.incallui,com.google.android.dialer,com.samsung.android.dialer,com.sec.android.app.clockpackage,com.google.android.deskclock,com.android.deskclock"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:notificationTimeout="50"
-    android:canRetrieveWindowContent="false"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds"
+    android:canRetrieveWindowContent="true"
     android:description="@string/guard_description"/>
