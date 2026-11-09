@@ -19,6 +19,8 @@ final class StandbyController implements SensorEventListener {
     private final Context ctx; private final Window window; private final StandbyView view; private final Runnable close; private final long delayOverride; private final boolean activeAtOnce;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable scheduleCheck = new Runnable() { @Override public void run() { if (!Prefs.withinSchedule(ctx)) { close.run(); return; } handler.postDelayed(this, 30_000); } };
+    private float lastLux; private boolean leaving;
+    private final Runnable leaveNight = new Runnable() { @Override public void run() { leaving = false; if (night && lastLux > nightLux * 1.6f + 2) { night = false; view.setNight(false); } } };
     private SensorManager sensors; private Sensor motion, light; private TiltGate gate; private boolean gated, autoNight, night, running; private float nightLux;
 
     /** @param delayMs how long the pose must hold before showing (-1 = the user's Start delay); @param activeAtOnce show immediately, using the gate only to close. */
@@ -42,13 +44,20 @@ final class StandbyController implements SensorEventListener {
         if (!gated || activeAtOnce) view.setActive(true);
         if (autoNight && light != null) sensors.registerListener(this, light, SensorManager.SENSOR_DELAY_NORMAL);
     }
-    void stop() { if (!running) return; running = false; handler.removeCallbacks(scheduleCheck); sensors.unregisterListener(this); }
+    void stop() { if (!running) return; running = false; handler.removeCallbacks(scheduleCheck); handler.removeCallbacks(leaveNight); leaving = false; sensors.unregisterListener(this); }
 
     @Override public void onSensorChanged(SensorEvent e) {
         if (!running) return;
         if (e.sensor.getType() == Sensor.TYPE_LIGHT) {
             // Hysteresis: enter night below the threshold, leave it well above, so the face doesn't flicker.
-            float lux = e.values[0]; if (!night && lux < nightLux) night = true; else if (night && lux > nightLux * 1.6f + 2) night = false; view.setNight(night); return;
+            float lux = e.values[0]; lastLux = lux;
+            if (!night && lux < nightLux) { night = true; view.setNight(true); }
+            else if (night) {
+                // One stray bright reading (a sensor spike, a passing glow) used to flip the whole screen to day mode for a split second. Leave night only once it stays bright.
+                if (lux > nightLux * 1.6f + 2) { if (!leaving) { leaving = true; handler.postDelayed(leaveNight, 4_000); } }
+                else if (leaving) { leaving = false; handler.removeCallbacks(leaveNight); }
+            }
+            return;
         }
         view.setGravityX(e.values[0]);
         if (!gated) return;
