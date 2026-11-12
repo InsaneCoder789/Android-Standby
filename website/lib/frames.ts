@@ -11,6 +11,10 @@ export const frames = [
       {
         "name": "Float",
         "image": "/frames/00_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/00_2.webp"
       }
     ]
   },
@@ -30,6 +34,10 @@ export const frames = [
       {
         "name": "Calendar",
         "image": "/frames/01_2.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/01_3.webp"
       }
     ]
   },
@@ -41,6 +49,10 @@ export const frames = [
       {
         "name": "Now playing",
         "image": "/frames/02_0.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/02_1.webp"
       }
     ]
   },
@@ -50,12 +62,16 @@ export const frames = [
     "group": "Everyday",
     "looks": [
       {
-        "name": "Analog",
+        "name": "Analog and player",
         "image": "/frames/03_0.webp"
       },
       {
-        "name": "Digital",
+        "name": "Digital and player",
         "image": "/frames/03_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/03_2.webp"
       }
     ]
   },
@@ -67,6 +83,10 @@ export const frames = [
       {
         "name": "Slideshow",
         "image": "/frames/04_0.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/04_1.webp"
       }
     ]
   },
@@ -78,6 +98,10 @@ export const frames = [
       {
         "name": "World clocks",
         "image": "/frames/05_0.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/05_1.webp"
       }
     ]
   },
@@ -93,6 +117,10 @@ export const frames = [
       {
         "name": "Cards and date",
         "image": "/frames/06_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/06_2.webp"
       }
     ]
   },
@@ -108,6 +136,10 @@ export const frames = [
       {
         "name": "Letters and date",
         "image": "/frames/07_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/07_2.webp"
       }
     ]
   },
@@ -123,6 +155,10 @@ export const frames = [
       {
         "name": "Time and date",
         "image": "/frames/08_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/08_2.webp"
       }
     ]
   },
@@ -138,6 +174,10 @@ export const frames = [
       {
         "name": "Six tubes",
         "image": "/frames/09_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/09_2.webp"
       }
     ]
   },
@@ -153,6 +193,10 @@ export const frames = [
       {
         "name": "Time and date",
         "image": "/frames/10_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/10_2.webp"
       }
     ]
   },
@@ -168,6 +212,10 @@ export const frames = [
       {
         "name": "Dial and date",
         "image": "/frames/11_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/11_2.webp"
       }
     ]
   },
@@ -183,6 +231,10 @@ export const frames = [
       {
         "name": "Orbits and date",
         "image": "/frames/12_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/12_2.webp"
       }
     ]
   },
@@ -198,6 +250,10 @@ export const frames = [
       {
         "name": "Clock and path",
         "image": "/frames/13_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/13_2.webp"
       }
     ]
   },
@@ -213,6 +269,10 @@ export const frames = [
       {
         "name": "Clock and phase",
         "image": "/frames/14_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/14_2.webp"
       }
     ]
   },
@@ -228,6 +288,10 @@ export const frames = [
       {
         "name": "Year of dots",
         "image": "/frames/15_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/15_2.webp"
       }
     ]
   },
@@ -243,6 +307,10 @@ export const frames = [
       {
         "name": "Split date",
         "image": "/frames/16_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/16_2.webp"
       }
     ]
   },
@@ -258,6 +326,10 @@ export const frames = [
       {
         "name": "Clock and weather",
         "image": "/frames/17_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/17_2.webp"
       }
     ]
   },
@@ -273,6 +345,10 @@ export const frames = [
       {
         "name": "Time and date",
         "image": "/frames/18_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/18_2.webp"
       }
     ]
   },
@@ -288,6 +364,10 @@ export const frames = [
       {
         "name": "Box breathing",
         "image": "/frames/19_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/19_2.webp"
       }
     ]
   },
@@ -303,6 +383,10 @@ export const frames = [
       {
         "name": "System information",
         "image": "/frames/20_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/20_2.webp"
       }
     ]
   },
@@ -318,6 +402,10 @@ export const frames = [
       {
         "name": "Clock and sidebar",
         "image": "/frames/21_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/21_2.webp"
       }
     ]
   },
@@ -333,16 +421,26 @@ export const frames = [
       {
         "name": "Digital timer",
         "image": "/frames/22_1.webp"
+      },
+      {
+        "name": "Redesign",
+        "image": "/frames/22_2.webp"
       }
     ]
-  }
-  ,{
+  },
+  {
     "id": 23,
     "name": "Calls",
     "group": "Everyday",
     "looks": [
-      { "name": "Incoming", "image": "/frames/23_0.png" },
-      { "name": "On a call", "image": "/frames/23_1.png" }
+      {
+        "name": "Incoming",
+        "image": "/frames/23_0.webp"
+      },
+      {
+        "name": "On a call",
+        "image": "/frames/23_1.webp"
+      }
     ]
   }
 ] as const;
