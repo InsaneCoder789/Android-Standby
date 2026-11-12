@@ -32,3 +32,9 @@ export function FaqGraph() {
 export function Breadcrumbs({ items }: { items: { name: string; path: string }[] }) {
   return <JsonLd data={{ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, name: it.name, item: `${SITE_URL}${it.path}` })) }} />;
 }
+
+/** The faces on /screens as an ItemList, each with its preview image, so search engines can show them as a collection. */
+export function FacesGraph({ items }: { items: { name: string; description: string; image: string; anchor: string }[] }) {
+  return <JsonLd data={{ '@context': 'https://schema.org', '@type': 'ItemList', name: 'Android Standby clock faces', numberOfItems: items.length,
+    itemListElement: items.map((it, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE_URL}/screens#${it.anchor}`, item: { '@type': 'CreativeWork', name: it.name, description: it.description, image: `${SITE_URL}${it.image}` } })) }} />;
+}

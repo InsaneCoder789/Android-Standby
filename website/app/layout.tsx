@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import '@/components/live-face.css';
-import '@/components/live-experience.css';
 import { LocalClockProvider } from '@/components/local-clock';
 import { SiteGraph } from '@/components/json-ld';
 import { BANNER, DESCRIPTION, KEYWORDS, REPO_URL, SITE_NAME, SITE_URL, THEME_COLOR, TITLE } from '@/lib/site';

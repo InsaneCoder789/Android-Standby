@@ -1,32 +1,44 @@
 'use client';
 import * as Accordion from '@radix-ui/react-accordion';
-import { ArrowUpRight, ArrowRight, Plus, Minus } from '@phosphor-icons/react';
-import { usePathname } from 'next/navigation';
-import LiveHero from './live-hero';
-import { frames } from '@/lib/frames';
+import { Plus, Minus } from '@phosphor-icons/react';
+import { Hero, Reel } from './deck';
+import { Header, Footer } from './chrome';
 import { faqs } from '@/lib/faqs';
-import { LiveFace } from './live-face';
 import { useLocalClock } from './local-clock';
-export function Header(){const path=usePathname();return <header className="header"><a className="wordmark" href="/" aria-label="Android Standby home"><span className="brand-mark">s<span>:</span></span>standby<span className="brand-platform">for Android</span></a><nav aria-label="Main navigation"><a className="nav-screens" href="/screens" aria-current={path==='/screens'?'page':undefined}>The screens</a><a href="/#details">The details</a><a className="nav-cta" href="/guide">Make it yours <ArrowUpRight size={16}/></a></nav></header>;}
-export function Footer(){return <footer className="footer section-wrap"><a className="footer-brand" href="/">Android Standby</a><p>An independent project inspired by StandBy.<br/>Not affiliated with Apple or Samsung.</p><div><a href="/guide">Build & setup <ArrowUpRight size={14}/></a><a href="https://github.com/InsaneCoder789/Android-Standby" target="_blank" rel="noreferrer">GitHub <ArrowUpRight size={14}/></a></div></footer>;}
-export default function Experience(){
- const clock=useLocalClock();
- const localTime=clock.now?new Intl.DateTimeFormat(clock.locale,{timeZone:clock.timeZone,hour:'numeric',minute:'2-digit'}).formatToParts(clock.now).filter(p=>p.type!=='dayPeriod').map(p=>p.value).join('').trim():'—:—';
- return <><Header/><main id="main">
- <LiveHero/>
- <section className="intro section-wrap" id="details"><p className="eyebrow">Less looking down. More looking over.</p><h2>Your everyday essentials.<br/><span>With a little breathing room.</span></h2><div className="intro-bottom"><p>On the nightstand, at your desk, or wherever you pause. Turn your charging phone sideways and give the moment a display of its own.</p><div className="posture-diagram" aria-label="Phone upright, then sideways on a stand"><div className="upright-phone"/><ArrowRight size={24}/><div className="sideways-phone"><span>{localTime}</span></div></div></div></section>
- <section className="story section-wrap" id="collection" aria-labelledby="story-title">
-  <p className="eyebrow">Find your kind of time</p>
-  <h2 id="story-title">A face for<br/><span>every passing moment.</span></h2>
-  <div className="story-lead"><p>Standby is not one clock. It is a collection of clocks and useful displays, from a glance in the dark to a quiet companion for winding down, all running on your own time.</p></div>
-  <div className="story-beats">
-   {([[0,0,'01','A glance in the dark','Big, tall numerals you can read from across the room, with the date and the weather tucked beside them. Nothing else asks for your attention.'],[2,0,'02','Music, given the room','When something starts playing, the screen turns into the player. The artwork sets the colour; the controls are big enough to find half asleep.'],[19,0,'03','Something to wind down with','A paced breathing guide, a slow sky, the phase of the moon. Faces that keep you company rather than demand to be read.']] as [number,number,string,string,string][]).map(([frame,look,n,title,text])=><article key={n} className="story-beat"><div className="story-screen"><LiveFace frame={frame} look={look}/></div><span>{n}</span><h3>{title}</h3><p>{text}</p></article>)}
-  </div>
-  <div className="story-cta"><p>Clocks, everyday information and atmosphere. Every face is live, and every one is yours to arrange, up to three at a time.</p><a className="solid-link" href="/screens">Explore all {frames.length} screens <ArrowUpRight size={18}/></a></div>
- </section>
- <section className="music-section section-wrap"><div className="music-copy"><p className="eyebrow">Set the evening to music</p><h2>Looks like<br/><span>your next favorite.</span></h2><p>Artwork sets the color. A soft glow sets the mood. Your music gets the space it deserves, with playback and seeking right where you need them.</p><a className="text-link" href="/screens">Explore every screen <ArrowUpRight size={18}/></a></div><div className="music-art"><div className="music-halo"/><div className="music-live-display"><LiveFace frame={2} interactive/></div><span>Music frame · interactive web demo</span></div></section>
- <section className="ritual"><div className="section-wrap"><div className="ritual-title"><p className="eyebrow">A small change of pace</p><h2>Put it down.<br/>Let it be <span>present.</span></h2></div><div className="ritual-steps"><article><span>01</span><h3>Make it yours.</h3><p>Preview every look. Pick up to three frames and arrange them your way.</p></article><article><span>02</span><h3>Give it a place.</h3><p>Connect your charger. Rest the phone sideways on an inclined stand.</p></article><article><span>03</span><h3>Settle in.</h3><p>Swipe between favorites. Hold for brightness. Keep the essentials close.</p></article></div><p className="activation-note">Use Android’s system screensaver or optional Instant mode. Activation varies with device settings and manufacturer policies.</p></div></section>
- <section className="faq section-wrap"><div><p className="eyebrow">Good to know</p><h2>A few things,<br/><span>before you settle in.</span></h2></div><Accordion.Root type="single" collapsible className="faq-list">{faqs.map(([q,a],i)=><Accordion.Item key={q} value={`q${i}`} className="faq-item"><Accordion.Header><Accordion.Trigger>{q}<span className="faq-plus"><Plus size={18}/></span><span className="faq-minus"><Minus size={18}/></span></Accordion.Trigger></Accordion.Header><Accordion.Content><p>{a}</p></Accordion.Content></Accordion.Item>)}</Accordion.Root></section>
- <section className="closing section-wrap"><span className="closing-clock" aria-hidden="true">{localTime}</span><div><h2>A little less phone.<br/>A little more <span>standby.</span></h2><a className="solid-link" href="/guide">Make it yours <ArrowUpRight size={20}/></a><p>Build from source. Android 9 and newer.</p></div></section>
- </main><Footer/></>;
+
+export default function Experience() {
+  const clock = useLocalClock();
+  const time = clock.now ? new Intl.DateTimeFormat(clock.locale, { timeZone: clock.timeZone, hour: 'numeric', minute: '2-digit' }).formatToParts(clock.now).filter(p => p.type !== 'dayPeriod').map(p => p.value).join('').trim() : '';
+  return <><Header /><main id="main">
+    <Hero />
+    <Reel />
+
+    <section className="how" id="details" aria-labelledby="how-title">
+      <div className="wrap">
+        <h2 id="how-title">Three steps, then leave it alone.</h2>
+        <ol className="how-steps">
+          <li><h3>Make it yours</h3><p>Preview every look. Pick up to three faces and arrange them your way.</p></li>
+          <li><h3>Give it a place</h3><p>Connect your charger. Rest the phone sideways on an inclined stand.</p></li>
+          <li><h3>Settle in</h3><p>Swipe between favourites. Hold for brightness. Keep the essentials close.</p></li>
+        </ol>
+        <p className="fine">Standby runs only while the phone is charging, as Android’s system screensaver or through the optional Instant mode. Activation varies with device settings and manufacturer policies.</p>
+      </div>
+    </section>
+
+    <section className="asks" id="questions" aria-labelledby="asks-title">
+      <div className="wrap asks-grid">
+        <h2 id="asks-title">Good to know.</h2>
+        <Accordion.Root type="single" collapsible className="asks-list">{faqs.map(([q, a], i) => <Accordion.Item key={q} value={`q${i}`} className="ask"><Accordion.Header><Accordion.Trigger>{q}<span className="ask-plus"><Plus size={18} /></span><span className="ask-minus"><Minus size={18} /></span></Accordion.Trigger></Accordion.Header><Accordion.Content><p>{a}</p></Accordion.Content></Accordion.Item>)}</Accordion.Root>
+      </div>
+    </section>
+
+    <section className="end" aria-labelledby="end-title">
+      <div className="wrap">
+        <p className="end-clock" aria-hidden="true" suppressHydrationWarning>{time || ' '}</p>
+        <h2 id="end-title">A little less phone. A little more standby.</h2>
+        <p className="end-acts"><a className="btn" href="/guide">Set it up</a><a className="link" href="/screens">See all faces</a></p>
+        <p className="fine">Build from source. Android 9 and newer.</p>
+      </div>
+    </section>
+  </main><Footer /></>;
 }

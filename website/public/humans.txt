@@ -1,0 +1,6 @@
+/* TEAM */
+Project: Android Standby
+Site: https://github.com/InsaneCoder789/Android-Standby
+
+/* SITE */
+Standard: HTML5, CSS3, React, Next.js

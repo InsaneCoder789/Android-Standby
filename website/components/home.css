@@ -1,0 +1,102 @@
+/* Homepage. A held screen that cuts between statements and live faces, then three plain sections. */
+
+/* ---- hero: a wall of live faces in three sizes, drifting past each other on a tilt ---- */
+.hero{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:var(--off);contain:layout paint}
+.wall{position:absolute;inset:var(--top) 0 0;overflow:hidden}
+.wall-tilt{position:absolute;left:50%;top:44%;width:max-content;transform:translate(-50%,-50%) rotate(-8deg);display:grid;gap:clamp(10px,1.4vw,22px)}
+.wall-row{display:flex;gap:clamp(10px,1.4vw,22px);width:max-content;will-change:transform}
+.tile{flex:none;height:var(--h);aspect-ratio:2.167;border-radius:clamp(8px,1vw,16px);overflow:hidden;background:#030304;box-shadow:0 0 0 1px #2c2c30}
+.tile .lf-root{border-radius:0;height:100%}
+.row-0{--h:clamp(120px,27svh,300px);animation:drift-a 70s ease-in-out infinite alternate}
+.row-1{--h:clamp(150px,36svh,400px);animation:drift-b 95s ease-in-out infinite alternate}
+.row-2{--h:clamp(110px,24svh,270px);animation:drift-a 82s ease-in-out infinite alternate-reverse}
+@keyframes drift-a{from{transform:translateX(-9%)}to{transform:translateX(9%)}}
+@keyframes drift-b{from{transform:translateX(8%)}to{transform:translateX(-8%)}}
+.hero.is-away .wall-row{animation-play-state:paused}
+/* shade so the headline reads, heaviest where the words are */
+.wall-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#000 0%,#000d 22%,#0006 46%,#0000 70%),linear-gradient(90deg,#000b 0%,#0000 55%)}
+.hero-words{position:absolute;inset:auto 0 0;padding:0 var(--gutter) clamp(28px,5svh,56px)}
+.hero h1{font-size:min(11.4vw,calc((100svh - var(--top)) / 4.6));line-height:.9;letter-spacing:-.05em;max-width:11em}
+.hero-row{display:flex;align-items:end;justify-content:space-between;gap:18px 48px;margin-top:clamp(16px,2.6svh,30px);animation:fade .7s ease .45s both}
+.hero-row>p:first-child{font-size:clamp(15px,1.2vw,18px);color:#d4d4d7;max-width:34em}
+.hero-acts{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;flex:none}
+/* the headline's words rise out of their line, one after another */
+.word{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em;margin-right:.24em}
+.word:last-child{margin-right:0}
+.word i{display:inline-block;font-style:normal;animation:word-in .7s cubic-bezier(.16,.9,.2,1) both;animation-delay:calc(var(--k) * 60ms + 120ms)}
+@keyframes word-in{from{transform:translateY(108%) skewY(7deg)}to{transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* ---- reel: on white, one screen stays put and changes face as its description scrolls past ---- */
+.reel{background:var(--paper);color:var(--ink)}
+.reel-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,5vw,88px)}
+.reel-steps{grid-column:1;grid-row:1}
+.reel-stage{grid-column:2;grid-row:1;position:sticky;top:var(--top);height:calc(100svh - var(--top));display:flex;flex-direction:column;justify-content:center;gap:18px}
+.reel-screen{position:relative;aspect-ratio:2.167;border-radius:clamp(12px,1.6vw,26px);background:#030304;overflow:hidden;box-shadow:0 0 0 clamp(5px,.6vw,9px) var(--ink),0 50px 90px -40px #000a}
+.reel-face{position:absolute;inset:0;opacity:0;visibility:hidden;transform:scale(1.06);transition:opacity .45s ease,transform .8s cubic-bezier(.16,.9,.2,1),visibility 0s linear .45s}
+.reel-face.is-on{opacity:1;visibility:visible;transform:none;transition:opacity .45s ease,transform .8s cubic-bezier(.16,.9,.2,1)}
+.reel-face .lf-root{border-radius:0;height:100%}
+.reel-count{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:700;font-stretch:112%}
+.reel-count span{color:var(--grey-d);font-weight:600;font-variant-numeric:tabular-nums}
+.reel-step{min-height:calc(100svh - var(--top));display:flex;flex-direction:column;justify-content:center;padding-block:40px}
+.reel-step h2{font-size:clamp(38px,4.6vw,76px);line-height:.94}
+.reel-step>p{font-size:clamp(16px,1.25vw,19px);color:#45454a;max-width:26em;margin-top:clamp(16px,2vw,26px)}
+.reel-acts{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center}
+.btn-ink{background:var(--ink);color:var(--paper)}.btn-ink:hover{background:#3a3a40}
+.reel :focus-visible{outline-color:var(--ink)}
+/* each description slides up into place as it enters, tied to the scroll itself where the browser can do that */
+@supports (animation-timeline:view()){
+  .reel-step>*{animation:step-in linear both;animation-timeline:view();animation-range:entry 0% cover 34%}
+  .reel-step>p{animation-range:entry 12% cover 40%}
+  @keyframes step-in{from{opacity:0;transform:translateY(64px)}to{opacity:1;transform:none}}
+}
+
+@media(orientation:landscape) and (max-height:520px){.hero-row>p:first-child{display:none}}
+@media(max-aspect-ratio:1/1){
+  .wall-tilt{top:36%}
+  .row-0{--h:clamp(96px,15svh,200px)}.row-1{--h:clamp(120px,19svh,260px)}.row-2{--h:clamp(90px,13svh,180px)}
+  .wall-shade{background:linear-gradient(0deg,#000 0%,#000e 34%,#0007 54%,#0000 76%)}
+  .hero h1{font-size:min(15vw,9.6svh)}
+  .hero-row{flex-direction:column;align-items:start}
+}
+/* narrow screens: the screen pins under the top bar and the descriptions scroll beneath it */
+@media(max-width:900px){
+  .reel-grid{grid-template-columns:minmax(0,1fr);gap:0}
+  .reel-stage{grid-column:1;grid-row:1;height:auto;z-index:2;background:var(--paper);padding:18px 0 14px;gap:12px;box-shadow:0 18px 18px -14px var(--paper)}
+  .reel-steps{grid-column:1;grid-row:2}
+  .reel-step{min-height:62svh;justify-content:flex-start;padding-block:28px 40px}
+  .reel-step h2{font-size:clamp(34px,10.4vw,56px)}
+}
+@media(prefers-reduced-motion:reduce){.wall-row,.word i,.hero-row,.reel-step>*{animation:none!important}.reel-face{transition:none}}
+
+/* how it works: the screen turned on */
+.how{background:var(--paper);color:var(--ink);padding-block:clamp(90px,12vw,180px)}
+.how h2{max-width:8.5em}
+.how-steps{list-style:none;padding:0;margin-top:clamp(48px,7vw,104px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(24px,4vw,64px);counter-reset:step}
+.how-steps li{counter-increment:step;border-top:2px solid var(--ink);padding-top:18px}
+.how-steps li::before{content:counter(step);display:block;font-weight:800;font-stretch:125%;font-size:clamp(64px,8vw,128px);line-height:.9;letter-spacing:-.05em;margin-bottom:clamp(20px,3vw,44px)}
+.how-steps p{color:#45454a;max-width:22em;margin-top:10px}
+.how .fine{color:#5d5d62;max-width:48em;margin-top:clamp(40px,5vw,72px)}
+
+.asks{background:var(--paper);color:var(--ink);padding-block:0 clamp(90px,12vw,180px)}
+.asks-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(28px,6vw,96px);align-items:start;border-top:2px solid var(--ink);padding-top:clamp(40px,5vw,72px)}
+.asks h2{font-size:clamp(36px,4.6vw,72px)}
+.ask{border-bottom:1px solid var(--rule-l)}.ask:first-child{border-top:1px solid var(--rule-l)}
+.ask h3{font:inherit;letter-spacing:0}
+.ask button{display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%;min-height:68px;padding:18px 0;border:0;background:none;color:var(--ink);font-size:clamp(17px,1.35vw,20px);font-weight:600;line-height:1.3;text-align:left}
+.ask button span{flex:none}
+.ask [data-state=open] .ask-plus,.ask [data-state=closed] .ask-minus{display:none}
+.ask [role=region]{overflow:hidden}
+.ask [role=region]>p{color:#45454a;font-size:16px;line-height:1.6;padding:0 44px 24px 0;max-width:44em}
+.asks :focus-visible,.how :focus-visible{outline-color:var(--ink)}
+
+.end{background:var(--off);padding-block:clamp(90px,12vw,170px) clamp(80px,10vw,140px)}
+.end-clock{font-weight:900;font-stretch:125%;font-size:min(27vw,58svh);line-height:.8;letter-spacing:-.06em;font-variant-numeric:tabular-nums;min-height:.8em;margin-left:-.04em}
+.end h2{font-size:clamp(30px,3.8vw,60px);max-width:13em;margin-top:clamp(28px,4vw,56px)}
+.end-acts{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;margin-top:36px}
+.end .fine{margin-top:18px}
+
+@media(max-width:1000px){.asks-grid{grid-template-columns:minmax(0,1fr)}.how-steps{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:760px){
+  .ask [role=region]>p{padding-right:0}
+}
