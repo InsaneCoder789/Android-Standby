@@ -91,23 +91,23 @@ final class MusicFrame {
             ClockFrames.text(c, paint, "Start music on your phone and it shows up here", left, h * .53f, h * .045f, 0xb3ffffff, Fonts.UI_MED, Paint.Align.LEFT, panelW);
             toggle.setEmpty(); previous.setEmpty(); next.setEmpty(); seek.setEmpty(); return;
         }
-        if (redesign) { paint.setLetterSpacing(.24f); ClockFrames.text(c, paint, playing() ? "NOW PLAYING" : "PAUSED", left, h * .15f, h * .036f, 0xe6ffffff, Fonts.UI_SEMI, Paint.Align.LEFT, panelW); paint.setLetterSpacing(0f); }
+        if (redesign) { paint.setLetterSpacing(.24f); ClockFrames.text(c, paint, (playing() ? "NOW PLAYING" : "PAUSED") + (snap.app != null ? "  ·  " + snap.app.toUpperCase(java.util.Locale.getDefault()) : ""), left, h * .15f, h * .036f, 0xe6ffffff, Fonts.UI_SEMI, Paint.Align.LEFT, panelW); paint.setLetterSpacing(0f); }
         // Two fixed title lines keep long metadata readable without moving the timeline or buttons.
         title(c, snap.title == null ? "Unknown track" : snap.title, left, panelW, h);
         paint.setTypeface(Fonts.UI_MED); paint.setTextSize(h * .045f); String artist = TextUtils.ellipsize(snap.artist == null ? "" : snap.artist, new TextPaint(paint), panelW, TextUtils.TruncateAt.END).toString();
         ClockFrames.text(c, paint, artist, left, h * .422f, h * .045f, 0xc9ffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
-        if (snap.app != null) chip(c, left, h * .493f, snap.app, h, panelW);
+        if (snap.app != null && !redesign) chip(c, left, h * .493f, snap.app, h, panelW);   // the redesign names the app in its label instead
         // Wavy seek bar.
         long now = SystemClock.elapsedRealtime(), pos = position(now); float frac = seeking ? seekFraction : NowBar.fraction(pos, snap.duration);
-        float sy = h * .602f, sl = left, sr = right; seekTrack.set(sl, sy, sr, sy); seek.set(sl - h * .02f, sy - h * .05f, sr + h * .02f, sy + h * .05f);
+        float sy = h * (redesign ? .575f : .602f), sl = left, sr = right; seekTrack.set(sl, sy, sr, sy); seek.set(sl - h * .02f, sy - h * .05f, sr + h * .02f, sy + h * .05f);
         float amp = playing() && !night ? h * .0105f : 0f, wl = h * .075f, phase = animating(ctx) ? (float) (-(now % 2200) / 2200.0 * 2 * Math.PI) : 0f, kx = sl + (sr - sl) * frac, stroke = h * .0095f;
         paint.setStyle(Paint.Style.STROKE); paint.setStrokeWidth(stroke); paint.setColor(0x59ffffff); c.drawLine(kx, sy, sr, sy, paint);
         paint.setColor(0xffffffff); Path wave = new Path(); wave.moveTo(sl, sy + NowBar.waveY(0, wl, amp, phase)); for (float x = sl + 3; x < kx; x += 3) wave.lineTo(x, sy + NowBar.waveY(x - sl, wl, amp, phase)); wave.lineTo(kx, sy + NowBar.waveY(kx - sl, wl, amp, phase)); c.drawPath(wave, paint);
         paint.setStyle(Paint.Style.FILL); paint.setColor(0xffffffff); c.drawCircle(kx, sy + NowBar.waveY(kx - sl, wl, amp, phase), h * (seeking ? .021f : .0165f), paint);
-        ClockFrames.text(c, paint, NowBar.clock(seeking ? (long) (seekFraction * snap.duration) : pos), sl, h * .665f, h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
-        if (snap.duration > 0) ClockFrames.text(c, paint, NowBar.clock(snap.duration), sr, h * .665f, h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.RIGHT, 0);
+        ClockFrames.text(c, paint, NowBar.clock(seeking ? (long) (seekFraction * snap.duration) : pos), sl, h * (redesign ? .638f : .665f), h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.LEFT, 0);
+        if (snap.duration > 0) ClockFrames.text(c, paint, NowBar.clock(snap.duration), sr, h * (redesign ? .638f : .665f), h * .036f, 0xccffffff, Fonts.UI_MED, Paint.Align.RIGHT, 0);
         // Controls: prev, play/pause (larger), next.
-        float cy = h * .810f, cx = (left + right) / 2f, step = Math.min(panelW * .27f, h * .24f), big = h * .078f, small = h * .062f;
+        float cy = h * (redesign ? .79f : .810f), cx = (left + right) / 2f, step = Math.min(panelW * .27f, h * .24f), big = h * .078f, small = h * .062f;
         toggle.set(cx - big, cy - big, cx + big, cy + big); previous.set(cx - step - small, cy - small, cx - step + small, cy + small); next.set(cx + step - small, cy - small, cx + step + small, cy + small);
         if (redesign) { paint.setStyle(Paint.Style.FILL); paint.setColor(0x2effffff); float pw = step + small + h * .035f, ph = big + h * .02f; c.drawRoundRect(cx - pw, cy - ph, cx + pw, cy + ph, ph, ph, paint); }
         paint.setStyle(Paint.Style.FILL); paint.setColor(0xefffffff); c.drawCircle(cx, cy, big, paint); paint.setColor(0xff24202a);

@@ -142,14 +142,14 @@ final class ConceptFrames {
     }
     private static int flip(Canvas c, Paint p, Calendar now) {
         int a = 0xffff9f0a; String t = hm(now).replace(":", ""); for (int i = 0; i < 4; i++) {
-            float x = 42 + i * 98 + (i > 1 ? 14 : 0); rr(c, p, x, 42, x + 86, 180, 14, 0xff1c1c20); rr(c, p, x, 42, x + 86, 111, 14, 0xff25252a); tx(c, p, t.substring(i, i + 1), x + 43, 140, 110, 0xfff2f2f7, Fonts.ROUNDED_BOLD, Paint.Align.CENTER);
+            float x = 42 + i * 98 + (i > 1 ? 14 : 0); rr(c, p, x, 42, x + 86, 180, 14, 0xff1c1c20); rr(c, p, x, 42, x + 86, 111, 14, 0xff25252a); tx(c, p, t.substring(i, i + 1), x + 43, 169, 165, 0xfff2f2f7, Fonts.CONDENSED, Paint.Align.CENTER);   // condensed, so the digit fills the card from top to bottom
             rr(c, p, x, 109.5f, x + 86, 112.5f, 0, 0xff000000); dot(c, p, x + 6, 111, 3, 0xff000000); dot(c, p, x + 80, 111, 3, 0xff000000);
         }
         dot(c, p, 232, 95, 4, a); dot(c, p, 232, 125, 4, a); return a;
     }
     private static int word(Canvas c, Paint p, Calendar now) {
         int a = 0xffffd60a; boolean[][] on = new boolean[WordClock.ROWS][WordClock.COLS]; List<int[]> lit = WordClock.lit(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE)); for (int[] s : lit) for (int k = 0; k < s[2]; k++) on[s[0]][s[1] + k] = true;
-        float dx = 38, dy = 18.2f, x0 = 240 - dx * (WordClock.COLS - 1) / 2f, y0 = 40; for (int r = 0; r < WordClock.ROWS; r++) for (int k = 0; k < WordClock.COLS; k++) tx(c, p, WordClock.GRID[r].substring(k, k + 1), x0 + k * dx, y0 + r * dy + 6, 17, on[r][k] ? a : 0xff2c2c30, on[r][k] ? Fonts.ROUNDED_BOLD : Fonts.UI_SEMI, Paint.Align.CENTER);
+        float dx = 36, dy = 18.2f, x0 = 240 - dx * (WordClock.COLS - 1) / 2f, y0 = 40; for (int r = 0; r < WordClock.ROWS; r++) for (int k = 0; k < WordClock.COLS; k++) tx(c, p, WordClock.GRID[r].substring(k, k + 1), x0 + k * dx, y0 + r * dy + 6, 17, on[r][k] ? a : 0xff2c2c30, on[r][k] ? Fonts.ROUNDED_BOLD : Fonts.UI_SEMI, Paint.Align.CENTER);
         return a;
     }
     private static final String[][] DOT = {{"01110", "10001", "10011", "10101", "11001", "10001", "01110"}, {"00100", "01100", "00100", "00100", "00100", "00100", "01110"}, {"01110", "10001", "00001", "00010", "00100", "01000", "11111"}, {"11110", "00001", "00001", "01110", "00001", "00001", "11110"}, {"00010", "00110", "01010", "10010", "11111", "00010", "00010"},
@@ -228,8 +228,8 @@ final class ConceptFrames {
     }
     private static int breathe(Canvas c, Paint p, Calendar now, long ms) {
         int a = 0xff64d2ff; float t = (ms % 19000) / 1000f, scale, count; String word; if (t < 4) { scale = t / 4f; word = "Breathe in"; count = 4 - t; } else if (t < 11) { scale = 1; word = "Hold"; count = 11 - t; } else { scale = 1 - (t - 11) / 8f; word = "Breathe out"; count = 19 - t; }
-        float e = scale * scale * (3 - 2 * scale); dot(c, p, 240, 113, 92 * (.6f + .4f * e), 0x1464d2ff); dot(c, p, 240, 113, 70 * (.6f + .4f * e), 0x2964d2ff); dot(c, p, 240, 113, 48 * (.6f + .5f * e), 0xe664d2ff);
-        tx(c, p, Integer.toString((int) Math.ceil(count)), 240, 121, 26, 0xff032030, Fonts.ROUNDED_BOLD, Paint.Align.CENTER); lab(c, p, word, 240, 36, a, Paint.Align.CENTER); tx(c, p, "4 in  ·  7 hold  ·  8 out  ·  " + hm(now), 240, 212, 13, MUTED, Fonts.UI_MED, Paint.Align.CENTER); return a;
+        float e = scale * scale * (3 - 2 * scale); dot(c, p, 240, 116, 84 * (.6f + .4f * e), 0x1464d2ff); dot(c, p, 240, 116, 64 * (.6f + .4f * e), 0x2964d2ff); dot(c, p, 240, 116, 44 * (.6f + .5f * e), 0xe664d2ff);
+        tx(c, p, Integer.toString((int) Math.ceil(count)), 240, 124, 26, 0xff032030, Fonts.ROUNDED_BOLD, Paint.Align.CENTER); lab(c, p, word, 240, 24, a, Paint.Align.CENTER); tx(c, p, "4 in  ·  7 hold  ·  8 out  ·  " + hm(now), 240, 214, 13, MUTED, Fonts.UI_MED, Paint.Align.CENTER); return a;
     }
     private static int terminal(Canvas c, Paint p, Context ctx, Calendar now) {
         int g = 0xff30d158; Typeface m = Typeface.MONOSPACE; boolean[] ch = new boolean[1]; int pct = ClockFrames.battery(ctx, ch);
