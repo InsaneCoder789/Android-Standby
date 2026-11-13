@@ -13,11 +13,11 @@ export const KEYWORDS = [
 export const THEME_COLOR = '#0b0b0c';
 
 export const BANNER = {
-  url: '/android-standby-social.jpg',
+  url: '/android-standby-float-social.jpg',
   width: 1200,
   height: 630,
   type: 'image/jpeg',
-  alt: 'Android Standby bedside clock and charging screensaver, with green 9:41 digits on a landscape phone stand',
+  alt: 'Android Standby bedside clock and charging screensaver, showing the app’s multicolor Float clock captured on a Samsung phone',
 };
 
 /** Metadata for one page. Next.js replaces (not merges) openGraph and twitter per page, so every page builds the full set here. */
