@@ -65,7 +65,7 @@ function Plate({ id, variant, flipped, group }: { id: number; variant: Layout; f
       <h3>{f.name}</h3>
       <p>{copy[id]}</p>
       <div className="ed-actions">
-        {f.looks.length > 1 && <div className="ed-looks" role="group" aria-label={`${f.name} looks`}>{f.looks.map((l, j) => <button key={l.name} aria-pressed={look === j} onClick={() => setLook(j)}>{l.name}</button>)}</div>}
+        {f.looks.length > 1 && <div className="ed-looks" role="group" aria-label={`${f.name} looks`}>{f.looks.map((l, j) => <button key={l.name} aria-pressed={look === j} onClick={() => setLook(j)}><img src={l.image} alt="" width={140} height={65} loading="lazy" decoding="async" /><span>{l.name}</span></button>)}</div>}
         <button className="ed-expand" aria-label={`View ${f.name} full screen`} onClick={() => { setSeen(true); setOpen(true); }}><ArrowsOut size={16} />Full screen</button>
       </div>
     </figcaption>
