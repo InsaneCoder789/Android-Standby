@@ -99,7 +99,13 @@ public class MediaListener extends NotificationListenerService {
         return latest;
     }
     @Override public void onListenerConnected(){instance=this;Instant.sync(this); synchronized(alerts){alerts.clear();} synchronized(timers){timers.clear();} try{android.service.notification.StatusBarNotification[] active=getActiveNotifications();if(active!=null)for(android.service.notification.StatusBarNotification n:active)onNotificationPosted(n);}catch(SecurityException ignored){} }
-    @Override public void onListenerDisconnected(){if(instance==this)instance=null;synchronized(alerts){alerts.clear();}synchronized(timers){timers.clear();}}
+    @Override public void onListenerDisconnected(){if(instance==this)instance=null;synchronized(alerts){alerts.clear();}synchronized(timers){timers.clear();}
+        try {
+            requestRebind(new ComponentName(this, MediaListener.class));
+        } catch (RuntimeException ignored) {
+            // Android can decline the rebind when notification access has been revoked.
+        }
+    }
     MediaController controller(){
         try {
             MediaSessionManager manager=(MediaSessionManager)getSystemService(MEDIA_SESSION_SERVICE);
