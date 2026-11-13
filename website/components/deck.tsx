@@ -41,10 +41,10 @@ export function Hero() {
 
 type Scene = { say: string; face: number; note: string; acc: string; interactive?: boolean };
 const SCENES: Scene[] = [
-  { say: 'It runs on your time.', face: 0, acc: '#3fae2a', note: 'Tall, tight numerals with the date tucked beside them. This is the real face, not a picture of one.' },
-  { say: 'Read it from across a dark room.', face: 6, acc: '#0b0b0c', note: 'Two heavy cards with a seam through the middle. The digits turn over as the minute does.' },
+  { say: 'It runs on your time.', face: 0, acc: '#3fae2a', note: 'A giant time, a thin line for the seconds, the date and weather in glass pills. This is the real face, not a picture of one.' },
+  { say: 'Read it from across a dark room.', face: 6, acc: '#0b0b0c', note: 'Four mechanical cards with a hinge through the middle, set big enough to read across a dark room.' },
   { say: 'Your music takes the whole screen.', face: 2, acc: '#c2318a', interactive: true, note: 'The artwork sets the colour and the controls are big enough to find half asleep. Press play: it is a web demo, and nothing reaches your phone.' },
-  { say: 'Four cities. No arithmetic.', face: 5, acc: '#2b7fe0', note: 'Four clocks for four places you care about, with the offset spelled out under each one.' },
+  { say: 'Four cities. No arithmetic.', face: 5, acc: '#2b7fe0', note: 'Four cities as four cards, each with its own day and night bar. No arithmetic at midnight.' },
   { say: 'Something slow to fall asleep to.', face: 18, acc: '#1f9c78', note: 'Slow, drifting colour behind the time. Nothing moves faster than you can ignore.' },
   { say: `${total} faces. Keep three. Swipe.`, face: 9, acc: '#d9711a', note: 'Pick up to three, arrange them your way and swipe between them on the phone.' },
 ];

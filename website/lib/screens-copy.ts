@@ -1,12 +1,12 @@
 /** Words for the editorial "The screens" page. Facts follow the Android app; nothing here promises more than the web demos do. */
 export const copy: Record<number, string> = {
-  0: 'The one you glance at in the dark. Tall, tight numerals with the date and the temperature tucked beside them. Switch to Float for soft, overlapping digits that fade from lilac to magenta.',
-  1: 'One analog dial, worn three ways: on its own, beside the weather, or next to a month at a glance. Weekends step back; today is the only thing in red.',
+  0: 'The one you glance at in the dark. A giant time, a thin line for the seconds, and the date and weather in glass pills. The classic tall look and Float, with soft overlapping digits, are a swipe away.',
+  1: 'An analog dial ringed by the day and the night, with the date, weather and next alarm in pills. Also worn as the classic dial, with widgets, or beside a month.',
   2: 'The artwork sets the colour and your music gets the room. Title, artist, a seek bar that moves while it plays, and controls big enough to hit half asleep.',
   3: 'The time on one side, the player on the other. Choose a dial or big digits; the music frame steps in by itself when something starts playing.',
   4: 'Your own photographs, one at a time, with the clock laid over them if you want it. Several photos play as a quiet slideshow.',
-  5: 'Four clocks for four places you care about, with the offset spelled out underneath, so nobody has to do arithmetic at midnight.',
-  6: 'Mechanical cards without the clatter. Two heavy cards, a seam through the middle, and the digits turn over as the minute does.',
+  5: 'Four cities as four cards, each with its own day and night bar, and the time zone spelled out so nobody has to do arithmetic at midnight.',
+  6: 'Four mechanical cards with a hinge through the middle, a touch of orange between the pairs. The classic two-card look turns over as the minute does.',
   7: 'Time, spelled out. A grid of eleven letters by ten lights only the words it needs, rounding to the nearest five minutes.',
   8: 'Glowing LED dots on a five-by-seven grid, the way a railway platform sign would do it. Unlit dots stay faintly visible behind the lit ones.',
   9: 'Warm glass tubes with a lattice mesh. Four tubes for the time, six when you want the seconds as well.',

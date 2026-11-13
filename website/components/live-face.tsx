@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useLocalClock } from "./local-clock";
 import { Sun, Cloud, CloudRain, Microphone, MicrophoneSlash, SpeakerHigh, BluetoothConnected, PhoneDisconnect, Phone } from "@phosphor-icons/react";
+import { Redesign, Calls, hasRedesign } from "./redesign";
 import "./live-face.css";
 
 type Props = { frame: number; look?: number; compact?: boolean; interactive?: boolean };
@@ -44,8 +45,15 @@ function Dial({ hour, minute, second, railway = false, plain = false }: { hour: 
 }
 function SevenSegments({ value }: { value: string }) { const masks = [63,6,91,79,102,109,125,7,127,111]; return <div className="lf-segments">{Array.from(value).map((ch,index)=>ch===":"?<div className="lf-segment-colon" key={index}><i/><i/></div>:<div className="lf-segment-digit" key={index}>{[0,1,2,3,4,5,6].map(segment=><i key={segment} className={`lf-seg lf-seg-${segment} ${ch.trim() === "" || Number.isNaN(Number(ch)) ? "" : masks[Number(ch)] & (1<<segment) ? "is-on" : ""}`}/>)}</div>)}</div>; }
 function Matrix({ value }: { value: string }) { return <div className="lf-matrix">{value.split("").map((ch, i) => <div key={i} className={ch === ":" ? "lf-dot-colon" : "lf-dot-digit"}>{ch === ":" ? <><i /><i /></> : (ch.trim() === "" ? "0".repeat(35) : dotFont[Number(ch)] || "0".repeat(35)).split("").map((bit, n) => <i key={n} className={bit === "1" ? "is-on" : ""} />)}</div>)}</div>; }
-export function LiveFace({ frame, look = 0, compact = false, interactive = false }: Props) {
+export function LiveFace({ frame, look: lookIn = 0, compact = false, interactive = false }: Props) {
+  // On faces that have one, the redesigned look comes first and the earlier looks follow it.
+  const redo = hasRedesign(frame) && lookIn === 0, look = hasRedesign(frame) ? Math.max(0, lookIn - 1) : lookIn;
   const clock = useLocalClock();
+  // The drawn looks compute SVG coordinates with Math.sin and Math.cos, whose last digits can differ between the server and the browser,
+  // so they are drawn once the page has mounted. Until then an empty screen of the same shape holds the place.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const blank = <svg className="rd" viewBox="0 0 480 222" aria-hidden="true" />;
   const { now, locale, timeZone, city: rawCity, weather, locationStatus } = clock;
   const city = rawCity.replace(/ · timezone region$/, "");   // faces show just the place name, like the app
   const [playing, setPlaying] = useState(false);
@@ -87,7 +95,8 @@ export function LiveFace({ frame, look = 0, compact = false, interactive = false
   const digital = <div className="lf-digital-time">{time}</div>;
   const music = <div className="lf-player"><div className="lf-album"><span>♫</span><small>Standby</small></div><div className="lf-track"><small>INTERACTIVE DEMO</small><h3>Evening, uninterrupted</h3><p>A moment to slow down</p><div className={`lf-equalizer ${playing && demoSeconds < 196 ? "is-playing" : ""}`}>{Array.from({ length: 7 }, (_, i) => <i key={i} style={{ "--delay": `${i * -.17}s` } as Vars} />)}</div><div className="lf-track-line"><i style={{ width: `${demoSeconds / 196 * 100}%` }} /></div><div className="lf-track-times"><span>{`${Math.floor(demoSeconds / 60)}:${String(demoSeconds % 60).padStart(2, "0")}`}</span><span>3:16</span></div><div className="lf-player-controls"><button disabled={!interactive} aria-label="Restart demo" onClick={resetDemo}>‹</button><button disabled={!interactive} className="lf-play" aria-label={playing ? "Pause demo" : "Play visual demo"} onClick={toggleDemo}>{playing ? "Ⅱ" : "▶"}</button><button disabled={!interactive} aria-label="Next demo" onClick={resetDemo}>›</button></div></div></div>;
   let content;
-  switch (frame) {
+  if (redo) content = !mounted ? blank : <Redesign frame={frame} clock={clock} extra={{ wordGrid: WORD_GRID, wordLit, timer: deadline ? { remaining, duration } : null, music: { playing: playing && demoSeconds < 196, seconds: demoSeconds, length: 196, interactive, toggle: toggleDemo, reset: resetDemo } }} />;
+  else switch (frame) {
     case 0: content = look ? <div className="lf-float">{(() => { let d = 0; return Array.from(time).map((ch, i) => ch === ":" ? <span key={i} className="lf-colon">:</span> : <span key={i} className={`lf-d${d++}`}>{ch}</span>); })()}</div> : <div className="lf-digital-layout">{digital}<aside><b><em>{fmt({ weekday: "short" }).toUpperCase()}</em> {now ? day : "—"}</b>{weather && <strong>{Math.round(weather.temperature)}°</strong>}</aside></div>; break;
     case 1: content = look === 2 ? <div className="lf-calendar-layout">{dateBlock}{calendar}</div> : <div className="lf-dial-layout"><Dial hour={hour} minute={minute} second={second} />{look === 1 ? calendar : <aside><h3>{city || weekday}</h3><p className="lf-redate">{fmt({ day: "numeric", month: "short" }).toUpperCase()}</p>{weather ? <><strong>{Math.round(weather.temperature)}°</strong><p>H:{Math.round(weather.high)}° &nbsp; L:{Math.round(weather.low)}°</p></> : <small>Allow location for live weather</small>}</aside>}</div>; break;
     case 2: content = music; break;
@@ -135,13 +144,8 @@ export function LiveFace({ frame, look = 0, compact = false, interactive = false
       content = deadline ? <div className={`lf-timer ${look ? "lf-timer-digital" : ""}`}><small>{remaining ? "TIMER" : "TIME’S UP"}</small><div className="lf-timer-ring" style={{ "--progress": `${remaining / duration * 360}deg` } as Vars}><strong>{countdown}</strong></div>{interactive ? <div className="lf-timer-actions"><button onClick={() => setDeadline(null)}>Cancel timer</button></div> : <p>Choose a duration in the interactive preview</p>}</div>
         : <div className="lf-timer lf-timer-presets"><em className="lf-timer-clock">{time}</em><small>START A TIMER</small><div className="lf-timer-grid">{presets.map(([n, u, sec]) => <button key={sec} disabled={!interactive} tabIndex={interactive ? 0 : -1} onClick={() => { setDuration(sec); setDeadline(Date.now() + sec * 1000); }}><b>{n}</b><span>{u}</span></button>)}</div><p>Website demo · countdown only, no sound</p></div>; break;
     }
-    case 23: {
-      const incoming = look === 0, secs = now ? Math.floor(now.getTime() / 1000) % 3600 : 0, mmss = `${pad2(Math.floor(secs / 60))}:${pad2(secs % 60)}`;
-      const btn = (kind: string, label: string, icon: React.ReactNode) => <div key={kind} className={kind}><i>{icon}</i>{label}</div>;
-      content = <div className={`lf-call ${incoming ? "lf-call-in" : "lf-call-on"}`}><div className="lf-call-disc">AS</div><div className="lf-call-body"><small>{incoming ? "INCOMING CALL" : "ON CALL"}</small><h3>Aarav Sharma</h3><p>Mobile · +91 98765 43210</p><em>SIM 1 · Airtel</em>{!incoming && <strong>{mmss}</strong>}
-        <div className="lf-call-buttons">{incoming ? [btn("end", "Decline", <PhoneDisconnect weight="fill" />), btn("accept", "Accept", <Phone weight="fill" />)] : [btn("off", "Mute", <Microphone weight="fill" />), btn("on", "Speaker", <SpeakerHigh weight="fill" />), btn("off dim", "Bluetooth", <BluetoothConnected weight="bold" />), btn("end", "End", <PhoneDisconnect weight="fill" />)]}</div></div></div>; break;
-    }
+    case 23: content = mounted ? <Calls clock={clock} incoming={look === 0} /> : blank; break;
     default: content = digital;
   }
-  return <div className={`lf-root lf-face lf-frame-${frame} lf-look-${look} ${compact ? "lf-compact" : ""} ${interactive ? "lf-interactive" : ""}`} aria-label={`Live ${timeZone} preview`}><div className="lf-content">{content}{period && [10].includes(frame) && <span className="lf-period">{period}</span>}</div></div>;
+  return <div className={`lf-root lf-face lf-frame-${frame} lf-look-${look} ${compact ? "lf-compact" : ""} ${interactive ? "lf-interactive" : ""}`} aria-label={`Live ${timeZone} preview`}><div className="lf-content">{content}{period && [10].includes(frame) && !redo && <span className="lf-period">{period}</span>}</div></div>;
 }
