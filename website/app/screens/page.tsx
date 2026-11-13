@@ -7,9 +7,9 @@ import { frames } from '@/lib/frames';
 import { copy } from '@/lib/screens-copy';
 import { pageMeta } from '@/lib/site';
 export const metadata: Metadata = pageMeta({
-  title: 'Every Standby clock face for Android',
-  shareTitle: 'Every Standby clock face for Android — Android Standby',
-  description: 'Browse every Android Standby screen: digital, analog, flip, nixie and word clocks, music, weather, photos, sun, moon and aurora faces. Each preview is live.',
+  title: 'Live clock faces for Android Standby',
+  shareTitle: 'Android Standby clock faces and live demos',
+  description: 'Explore 69 live Android Standby looks, including digital, analog, flip and Nixie clocks, plus music, weather, calendar and call previews.',
   shareDescription: 'Every Android Standby face, live: clocks, everyday information and atmosphere.',
   path: '/screens',
 });

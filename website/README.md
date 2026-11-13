@@ -46,7 +46,7 @@ Everything that search engines and link previews read is generated from one plac
 | --- | --- |
 | Title, description, keywords, canonical, robots, Open Graph, Twitter card | `app/layout.tsx` and each page's `metadata` |
 | Structured data (WebSite, SoftwareApplication, FAQPage, BreadcrumbList) | `components/json-ld.tsx` |
-| Social banner, 1200x630, 120 KB (`/og-banner.jpg`, used by every page's Open Graph and Twitter tags) | `public/og-banner.jpg`, composed from `public/scene/bedside.webp` with a captured `public/frames/float.webp` clock on its screen and Barlow Condensed text |
+| Social banner, 1200 × 630 JPEG, shared across Open Graph and Twitter cards | [Banner](public/android-standby-social.jpg) and [generation prompt](public/scene/SOCIAL-PREVIEW.md) |
 | `sitemap.xml`, `robots.txt`, web manifest, icons | `app/sitemap.ts`, `app/robots.ts`, `app/manifest.ts`, `app/icon.tsx`, `app/apple-icon.tsx` |
 | FAQ text (shown on the page and in the FAQ structured data) | `lib/faqs.ts` |
 

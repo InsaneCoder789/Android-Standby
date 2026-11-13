@@ -30,10 +30,10 @@ export function Hero() {
     </div>
     <div className="wall-shade" aria-hidden="true" />
     <div className="hero-words">
-      <h1 id="hero-title" aria-label="Sideways, it’s a clock."><Words text="Sideways, it’s a clock." /></h1>
+      <h1 id="hero-title" aria-label="Android Standby"><Words text="Android Standby" /></h1>
       <div className="hero-row">
-        <p>Put your Android on the charger, turn it on its side, and it becomes a bedside clock. Every screen behind these words is live{place && `, on ${place} time`}.</p>
-        <p className="hero-acts"><a className="btn" href="/screens">See all {total} faces</a><a className="link" href="/guide">Set it up</a></p>
+        <p>A bedside clock and charging screensaver for Android. Rest your charging phone sideways to bring your favorite face into view. Every screen behind these words is live{place && `, on ${place} time`}.</p>
+        <p className="hero-acts"><a className="btn" href="/screens">Explore {total} live faces</a><a className="link" href="/guide">Build and install</a></p>
       </div>
     </div>
   </section>;
@@ -70,7 +70,7 @@ export function Reel() {
         {SCENES.map((s, i) => <article key={i} data-i={i} ref={el => { steps.current[i] = el; }} className={`reel-step${i === at ? ' is-on' : ''}`}>
           <h2>{s.say}</h2>
           <p>{s.note}</p>
-          {i === SCENES.length - 1 && <p className="reel-acts"><a className="btn btn-ink" href="/screens">See all {total} faces</a><a className="link" href="/guide">Set it up</a></p>}
+          {i === SCENES.length - 1 && <p className="reel-acts"><a className="btn btn-ink" href="/screens">Explore {total} live faces</a><a className="link" href="/guide">Build and install</a></p>}
         </article>)}
       </div>
     </div>

@@ -13,10 +13,10 @@ export function SiteGraph() {
   return <JsonLd data={{
     '@context': 'https://schema.org',
     '@graph': [
-      { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: SITE_NAME, alternateName: [TAGLINE, 'Standby for Android'], description: DESCRIPTION, inLanguage: 'en' },
+      { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: SITE_NAME, alternateName: [TAGLINE, 'Android Standby mode'], description: DESCRIPTION, inLanguage: 'en' },
       {
         '@type': 'SoftwareApplication', '@id': `${SITE_URL}/#app`, name: SITE_NAME, alternateName: [TAGLINE, 'Android Standby clock'],
-        url: SITE_URL, description: DESCRIPTION, applicationCategory: 'LifestyleApplication', operatingSystem: 'Android 9 or later',
+        url: SITE_URL, description: DESCRIPTION, softwareVersion: '1.0', applicationCategory: 'LifestyleApplication', operatingSystem: 'Android 9 or later',
         softwareRequirements: 'Android 9 (API 28) or newer', isAccessibleForFree: true, image: screenshots[0], screenshot: screenshots,
         featureList: ['23 clock, music, everyday and ambient frame families', 'Runs as an Android screensaver or an optional Instant mode', 'Automatic night mode', 'Music controls, calls, alarms and timers on their own frames', 'Charging ring, weather and photo frames'],
         sameAs: [REPO_URL], mainEntityOfPage: { '@id': `${SITE_URL}/#website` },
